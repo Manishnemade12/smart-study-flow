@@ -138,7 +138,7 @@ function ChunkPage() {
                     {chunk.summary}
                   </div>
                 )}
-                <article className="prose prose-slate max-w-none prose-headings:font-semibold prose-h2:text-xl prose-h3:text-lg prose-p:leading-relaxed prose-li:my-1">
+                <article className="markdown-body">
                   <ReactMarkdown>{chunk.notes || "*No notes yet.*"}</ReactMarkdown>
                 </article>
               </>
