@@ -90,8 +90,8 @@ export async function fetchAll(): Promise<{ subjects: Subject[]; chunks: Chunk[]
     quizByChunk.set(q.chunk_id, list);
   }
   return {
-    subjects: ((subjects ?? []) as SubjectRow[]).map(toSubject),
-    chunks: ((chunks ?? []) as ChunkRow[]).map((c) => toChunk(c, quizByChunk.get(c.id) ?? [])),
+    subjects: ((subjects ?? []) as unknown as SubjectRow[]).map(toSubject),
+    chunks: ((chunks ?? []) as unknown as ChunkRow[]).map((c) => toChunk(c, quizByChunk.get(c.id) ?? [])),
   };
 }
 
@@ -199,7 +199,7 @@ export async function importTree(
 }
 
 export async function updateChunk(id: string, patch: Partial<Chunk>) {
-  const dbPatch: Record<string, unknown> = {};
+  const dbPatch: any = {};
   if (patch.title !== undefined) dbPatch.title = patch.title;
   if (patch.summary !== undefined) dbPatch.summary = patch.summary;
   if (patch.notes !== undefined) dbPatch.notes = patch.notes;
