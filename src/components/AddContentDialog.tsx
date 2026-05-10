@@ -169,8 +169,9 @@ export function AddContentDialog({ open, onOpenChange }: { open: boolean; onOpen
               <Button variant="outline" onClick={() => setStep("input")} className="gap-2">
                 <ArrowLeft className="w-4 h-4" /> Back
               </Button>
-              <Button onClick={save} className="gap-2" style={{ background: "var(--gradient-primary)" }}>
-                <Check className="w-4 h-4" /> Save to library
+              <Button onClick={save} disabled={saving} className="gap-2" style={{ background: "var(--gradient-primary)" }}>
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                {saving ? "Saving…" : "Save to library"}
               </Button>
             </div>
           </div>
