@@ -2,7 +2,7 @@ import { createFileRoute, useParams, Link, useNavigate } from "@tanstack/react-r
 import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { AppLayout } from "@/components/AppLayout";
-import { useStore, store } from "@/lib/store";
+import { useStore, useStoreActions } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +18,7 @@ export const Route = createFileRoute("/chunk/$chunkId")({
 function ChunkPage() {
   const { chunkId } = useParams({ from: "/chunk/$chunkId" });
   const data = useStore();
+  const actions = useStoreActions();
   const navigate = useNavigate();
   const chunk = data.chunks.find((c) => c.id === chunkId);
   const subject = chunk ? data.subjects.find((s) => s.id === chunk.subjectId) : null;
@@ -51,14 +52,14 @@ function ChunkPage() {
     setDraft({ title: chunk!.title, summary: chunk!.summary, notes: chunk!.notes });
     setEditing(true);
   }
-  function saveEdit() {
-    store.updateChunk(chunk!.id, { title: draft.title, summary: draft.summary, notes: draft.notes });
+  async function saveEdit() {
+    await actions.updateChunk(chunk!.id, { title: draft.title, summary: draft.summary, notes: draft.notes });
     setEditing(false);
     toast.success("Saved");
   }
-  function del() {
+  async function del() {
     if (!confirm(`Delete "${chunk!.title}"? This cannot be undone.`)) return;
-    store.deleteChunk(chunk!.id);
+    await actions.deleteChunk(chunk!.id);
     navigate({ to: "/" });
   }
 
@@ -91,7 +92,7 @@ function ChunkPage() {
             <Button
               variant={chunk.revised ? "default" : "outline"}
               size="sm"
-              onClick={() => store.updateChunk(chunk.id, { revised: !chunk.revised })}
+              onClick={() => actions.updateChunk(chunk.id, { revised: !chunk.revised })}
               className="gap-2"
             >
               {chunk.revised ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
