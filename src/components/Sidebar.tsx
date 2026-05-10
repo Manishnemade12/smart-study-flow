@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight, BookOpen, Plus, Trash2 } from "lucide-react";
-import { useStore, store } from "@/lib/store";
+import { useStore, useStoreActions } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function Sidebar({ onAdd }: { onAdd: () => void }) {
   const data = useStore();
+  const actions = useStoreActions();
   const params = useParams({ strict: false }) as { chunkId?: string };
   const activeId = params.chunkId;
   const [openSubjects, setOpenSubjects] = useState<Record<string, boolean>>({});
@@ -65,7 +66,7 @@ export function Sidebar({ onAdd }: { onAdd: () => void }) {
                   onClick={(e) => {
                     e.stopPropagation();
                     if (confirm(`Delete subject "${subject.name}" and all its chunks?`)) {
-                      store.deleteSubject(subject.id);
+                      actions.deleteSubject(subject.id);
                     }
                   }}
                 />

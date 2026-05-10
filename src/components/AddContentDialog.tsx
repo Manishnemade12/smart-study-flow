@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Sparkles, ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
-import { store } from "@/lib/store";
+import { useStoreActions } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
 
 type Step = "input" | "loading" | "preview";
 
@@ -29,7 +30,9 @@ export function AddContentDialog({ open, onOpenChange }: { open: boolean; onOpen
   const [step, setStep] = useState<Step>("input");
   const [text, setText] = useState("");
   const [tree, setTree] = useState<PreviewTree | null>(null);
+  const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+  const actions = useStoreActions();
 
   async function organize() {
     if (text.trim().length < 30) {
@@ -63,22 +66,33 @@ export function AddContentDialog({ open, onOpenChange }: { open: boolean; onOpen
     }
   }
 
-  function save() {
+  async function save() {
     if (!tree) return;
-    store.importTree(tree);
-    toast.success(`Saved ${tree.subjects.length} subject(s)`);
-    // Navigate to first chunk
-    const first = tree.subjects[0]?.chunks[0];
-    onOpenChange(false);
-    setTimeout(() => {
+    setSaving(true);
+    try {
+      await actions.importTree(tree);
+      toast.success(`Saved ${tree.subjects.length} subject(s)`);
+      const firstTitle = tree.subjects[0]?.chunks[0]?.title;
+      onOpenChange(false);
       setStep("input");
       setText("");
       setTree(null);
-      // Find newly inserted chunk by title
-      const snap = store.getSnapshot();
-      const target = snap.chunks.find((c) => c.title === first?.title);
-      if (target) navigate({ to: "/chunk/$chunkId", params: { chunkId: target.id } });
-    }, 100);
+      // Find newly inserted chunk by title to navigate
+      if (firstTitle) {
+        const { data } = await supabase
+          .from("chunks")
+          .select("id")
+          .eq("title", firstTitle)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (data?.id) navigate({ to: "/chunk/$chunkId", params: { chunkId: data.id } });
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -155,8 +169,9 @@ export function AddContentDialog({ open, onOpenChange }: { open: boolean; onOpen
               <Button variant="outline" onClick={() => setStep("input")} className="gap-2">
                 <ArrowLeft className="w-4 h-4" /> Back
               </Button>
-              <Button onClick={save} className="gap-2" style={{ background: "var(--gradient-primary)" }}>
-                <Check className="w-4 h-4" /> Save to library
+              <Button onClick={save} disabled={saving} className="gap-2" style={{ background: "var(--gradient-primary)" }}>
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                {saving ? "Saving…" : "Save to library"}
               </Button>
             </div>
           </div>
