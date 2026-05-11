@@ -6,6 +6,14 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function Sidebar({ onAdd }: { onAdd: () => void }) {
+  return (
+    <aside className="hidden md:flex w-72 shrink-0 border-r bg-card/50 backdrop-blur flex-col h-screen sticky top-0">
+      <SidebarInner onAdd={onAdd} />
+    </aside>
+  );
+}
+
+export function SidebarInner({ onAdd, onNavigate }: { onAdd: () => void; onNavigate?: () => void }) {
   const data = useStore();
   const actions = useStoreActions();
   const params = useParams({ strict: false }) as { chunkId?: string };
@@ -29,7 +37,7 @@ export function Sidebar({ onAdd }: { onAdd: () => void }) {
   }, [data]);
 
   return (
-    <aside className="w-72 shrink-0 border-r bg-card/50 backdrop-blur flex flex-col h-screen sticky top-0">
+    <div className="flex flex-col h-full w-full min-h-0">
       <div className="p-4 border-b flex items-center gap-2">
         <div className="w-9 h-9 rounded-lg flex items-center justify-center text-primary-foreground" style={{ background: "var(--gradient-primary)" }}>
           <BookOpen className="w-5 h-5" />
@@ -40,7 +48,7 @@ export function Sidebar({ onAdd }: { onAdd: () => void }) {
         </div>
       </div>
       <div className="p-3">
-        <Button onClick={onAdd} className="w-full gap-2" style={{ background: "var(--gradient-primary)" }}>
+        <Button onClick={() => { onAdd(); onNavigate?.(); }} className="w-full gap-2" style={{ background: "var(--gradient-primary)" }}>
           <Plus className="w-4 h-4" /> Add content
         </Button>
       </div>
@@ -62,7 +70,7 @@ export function Sidebar({ onAdd }: { onAdd: () => void }) {
                 <span className="font-medium text-sm flex-1 text-left">{subject.name}</span>
                 <span className="text-xs text-muted-foreground">{roots.length}</span>
                 <Trash2
-                  className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive"
+                  className="w-4 h-4 text-muted-foreground opacity-60 md:opacity-0 group-hover:opacity-100 hover:text-destructive ml-1"
                   onClick={(e) => {
                     e.stopPropagation();
                     if (confirm(`Delete subject "${subject.name}" and all its chunks?`)) {
@@ -91,8 +99,9 @@ export function Sidebar({ onAdd }: { onAdd: () => void }) {
                           <Link
                             to="/chunk/$chunkId"
                             params={{ chunkId: chunk.id }}
+                            onClick={() => onNavigate?.()}
                             className={cn(
-                              "flex-1 px-2 py-1.5 rounded-md text-sm truncate hover:bg-accent/50 transition-colors",
+                              "flex-1 px-2 py-2 rounded-md text-sm truncate hover:bg-accent/50 transition-colors",
                               activeId === chunk.id && "bg-accent text-accent-foreground font-medium",
                             )}
                           >
@@ -107,8 +116,9 @@ export function Sidebar({ onAdd }: { onAdd: () => void }) {
                                 key={child.id}
                                 to="/chunk/$chunkId"
                                 params={{ chunkId: child.id }}
+                                onClick={() => onNavigate?.()}
                                 className={cn(
-                                  "block px-2 py-1.5 rounded-md text-xs truncate hover:bg-accent/50 transition-colors text-muted-foreground",
+                                  "block px-2 py-2 rounded-md text-xs truncate hover:bg-accent/50 transition-colors text-muted-foreground",
                                   activeId === child.id && "bg-accent text-accent-foreground font-medium",
                                 )}
                               >
@@ -127,6 +137,6 @@ export function Sidebar({ onAdd }: { onAdd: () => void }) {
           );
         })}
       </nav>
-    </aside>
+    </div>
   );
 }

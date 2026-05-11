@@ -65,7 +65,7 @@ function ChunkPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 md:px-8 py-5 md:py-8">
         <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4">
           <Link to="/" className="hover:text-foreground">Home</Link>
           <ChevronRight className="w-3 h-3" />
@@ -78,7 +78,7 @@ function ChunkPage() {
           ))}
         </nav>
 
-        <header className="mb-6">
+        <header className="mb-5 md:mb-6">
           {editing ? (
             <Input
               value={draft.title}
@@ -86,7 +86,7 @@ function ChunkPage() {
               className="text-2xl font-bold h-auto py-2"
             />
           ) : (
-            <h1 className="text-3xl font-bold tracking-tight">{chunk.title}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight break-words">{chunk.title}</h1>
           )}
           <div className="mt-3 flex items-center gap-2 flex-wrap">
             <Button
@@ -113,7 +113,7 @@ function ChunkPage() {
         </header>
 
         <Tabs defaultValue="notes" className="w-full">
-          <TabsList>
+          <TabsList className="w-full md:w-auto overflow-x-auto">
             <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="key">Key points</TabsTrigger>
             <TabsTrigger value="terms">Terms</TabsTrigger>

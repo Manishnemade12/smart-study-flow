@@ -31,14 +31,14 @@ function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="max-w-6xl mx-auto px-8 py-10 space-y-10">
-        <section className="rounded-2xl p-8 text-primary-foreground relative overflow-hidden" style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-elegant)" }}>
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-6 md:space-y-10">
+        <section className="rounded-2xl p-6 md:p-8 text-primary-foreground relative overflow-hidden" style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-elegant)" }}>
           <div className="relative z-10 max-w-2xl">
             <div className="inline-flex items-center gap-2 text-xs font-medium bg-white/15 backdrop-blur px-3 py-1 rounded-full mb-4">
               <Sparkles className="w-3.5 h-3.5" /> AI-powered study organizer
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold leading-tight">Turn long ChatGPT chats into perfectly organized SSC notes.</h1>
-            <p className="mt-3 text-primary-foreground/85">Paste any conversation. We detect subjects, chapters, key terms and quiz questions — instantly.</p>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">Turn long ChatGPT chats into perfectly organized SSC notes.</h1>
+            <p className="mt-3 text-sm md:text-base text-primary-foreground/85">Paste any conversation. We detect subjects, chapters, key terms and quiz questions — instantly.</p>
             <Button onClick={() => setOpen(true)} variant="secondary" className="mt-6 gap-2">
               <Plus className="w-4 h-4" /> Add new content
             </Button>
@@ -46,7 +46,7 @@ function Dashboard() {
           <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-white/10 blur-3xl" />
         </section>
 
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           <StatCard icon={<BookOpen className="w-4 h-4" />} label="Subjects" value={stats.subjects} />
           <StatCard icon={<ListChecks className="w-4 h-4" />} label="Chunks" value={stats.total} />
           <StatCard icon={<TrendingUp className="w-4 h-4" />} label="Revised" value={`${stats.revised}/${stats.total || 0}`} />
