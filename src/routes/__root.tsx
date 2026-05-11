@@ -77,7 +77,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "SSC Smart Notes" },
       { name: "description", content: "Offline-ready SSC study notes and revision app." },
-      { name: "theme-color", content: "#0f172a" },
+      { name: "theme-color", content: "#f4efe7" },
       { name: "author", content: "SSC Smart Notes" },
       { property: "og:title", content: "SSC Smart Notes" },
       { property: "og:description", content: "Offline-ready SSC study notes and revision app." },
