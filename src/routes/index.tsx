@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { useAddContent } from "@/lib/add-content";
 import { Sparkles, BookOpen, ListChecks, TrendingUp, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PwaInstallCard } from "@/components/PwaInstallCard";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -94,6 +95,11 @@ function DashboardBody() {
               })}
             </div>
           )}
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold mt-6 mb-4">Install App</h2>
+          <PwaInstallCard />
         </section>
     </div>
   );

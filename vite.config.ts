@@ -3,6 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv, type PluginOption } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig(({ command, mode }) => {
@@ -16,6 +17,19 @@ export default defineConfig(({ command, mode }) => {
   const plugins: PluginOption[] = [
     tailwindcss(),
     tsconfigPaths({ projects: ["./tsconfig.json"] }),
+    VitePWA({
+      registerType: "autoUpdate",
+      injectRegister: false,
+      devOptions: {
+        enabled: true,
+      },
+      includeAssets: ["icon.svg", "maskable-icon.svg"],
+      workbox: {
+        cleanupOutdatedCaches: true,
+        globPatterns: ["**/*.{js,css,html,ico,svg,png,woff2}"],
+        navigateFallback: "/",
+      },
+    }),
     tanstackStart({
       server: { entry: "server" },
       importProtection: {

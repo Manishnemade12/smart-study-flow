@@ -4,7 +4,23 @@ import { ChevronDown, ChevronRight, BookOpen, Plus, Trash2 } from "lucide-react"
 import { useStore, useStoreActions } from "@/lib/store";
 import { useAddContent } from "@/lib/add-content";
 import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { usePwaInstall } from "@/hooks/use-pwa";
 import { cn } from "@/lib/utils";
+
+function InstallButtonCompact() {
+  const { deferredPrompt, install, installed, ios } = usePwaInstall();
+
+  if (installed) return <div className="text-xs text-muted-foreground">Installed</div>;
+  if (ios) return null;
+  if (!deferredPrompt) return null;
+
+  return (
+    <Button size="sm" onClick={() => install()} className="gap-2">
+      <Download className="w-4 h-4" /> Install
+    </Button>
+  );
+}
 
 export function Sidebar({ onAdd }: { onAdd: () => void }) {
   return (
@@ -48,12 +64,16 @@ export function SidebarInner({ onAdd, onNavigate }: { onAdd: () => void; onNavig
           <div className="font-semibold leading-tight">SSC Smart Notes</div>
           <div className="text-xs text-muted-foreground">AI study organizer</div>
         </div>
+        <div className="ml-auto">
+          <InstallButtonCompact />
+        </div>
       </div>
       <div className="p-3">
         <Button onClick={() => { onAdd(); onNavigate?.(); }} className="w-full gap-2" style={{ background: "var(--gradient-primary)" }}>
           <Plus className="w-4 h-4" /> Add content
         </Button>
       </div>
+
       <nav className="flex-1 overflow-y-auto px-2 pb-4 space-y-1">
         {tree.length === 0 && (
           <div className="px-3 py-6 text-sm text-muted-foreground text-center">

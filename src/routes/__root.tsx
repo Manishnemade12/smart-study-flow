@@ -7,11 +7,11 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth";
+import { PwaBootstrap } from "@/components/PwaBootstrap";
 
 function NotFoundComponent() {
   return (
@@ -75,19 +75,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "SSC Smart Notes" },
+      { name: "description", content: "Offline-ready SSC study notes and revision app." },
+      { name: "theme-color", content: "#0f172a" },
+      { name: "author", content: "SSC Smart Notes" },
+      { property: "og:title", content: "SSC Smart Notes" },
+      { property: "og:description", content: "Offline-ready SSC study notes and revision app." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:site", content: "@SSCSmartNotes" },
     ],
     links: [
       {
         rel: "manifest",
         href: "/manifest.webmanifest",
+      },
+      {
+        rel: "icon",
+        href: "/icon.svg",
+        type: "image/svg+xml",
       },
       {
         rel: "stylesheet",
@@ -120,37 +126,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ClientCleanup />
+      <PwaBootstrap />
       <AuthProvider>
         <Outlet />
         <Toaster richColors position="top-right" />
       </AuthProvider>
     </QueryClientProvider>
   );
-}
-
-function ClientCleanup() {
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const cleanup = async () => {
-      try {
-        if ("serviceWorker" in navigator) {
-          const registrations = await navigator.serviceWorker.getRegistrations();
-          await Promise.all(registrations.map((registration) => registration.unregister()));
-        }
-
-        if ("caches" in window) {
-          const cacheNames = await caches.keys();
-          await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
-        }
-      } catch (error) {
-        console.warn("Failed to clean up old service worker state", error);
-      }
-    };
-
-    void cleanup();
-  }, []);
-
-  return null;
 }
