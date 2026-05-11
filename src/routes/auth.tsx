@@ -22,7 +22,7 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/" });
+    if (!loading && user) navigate({ to: "/dashboard" });
   }, [user, loading, navigate]);
 
   async function signIn(e: React.FormEvent) {
@@ -32,19 +32,25 @@ function AuthPage() {
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back!");
+    navigate({ to: "/dashboard" });
   }
 
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: `${window.location.origin}/` },
     });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Account created — you're signed in.");
+    if (data.session) {
+      toast.success("Account created — opening dashboard.");
+      navigate({ to: "/dashboard" });
+    } else {
+      toast.success("Account created — check your email to finish sign in.");
+    }
   }
 
   return (

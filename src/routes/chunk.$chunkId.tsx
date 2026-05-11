@@ -44,7 +44,7 @@ function ChunkPage() {
     return (
       <AppLayout>
         <div className="p-12 text-center text-muted-foreground">
-          Chunk not found. <Link to="/" className="text-primary underline">Go home</Link>.
+          Chunk not found. <Link to="/dashboard" className="text-primary underline">Go home</Link>.
         </div>
       </AppLayout>
     );
@@ -62,14 +62,14 @@ function ChunkPage() {
   async function del() {
     if (!confirm(`Delete "${chunk!.title}"? This cannot be undone.`)) return;
     await actions.deleteChunk(chunk!.id);
-    navigate({ to: "/" });
+    navigate({ to: "/dashboard" });
   }
 
   return (
     <AppLayout>
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-5 md:py-8">
         <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4">
-          <Link to="/" className="hover:text-foreground">Home</Link>
+          <Link to="/dashboard" className="hover:text-foreground">Home</Link>
           <ChevronRight className="w-3 h-3" />
           <span>{subject.name}</span>
           {breadcrumb.map((t, i) => (
@@ -88,7 +88,7 @@ function ChunkPage() {
               className="text-2xl font-bold h-auto py-2"
             />
           ) : (
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight break-words">{chunk.title}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight wrap-break-word">{chunk.title}</h1>
           )}
           <div className="mt-3 flex items-center gap-2 flex-wrap">
             <Button
@@ -139,7 +139,7 @@ function ChunkPage() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Notes (markdown)</label>
-                  <Textarea value={draft.notes} onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))} className="mt-1 min-h-[400px] font-mono text-sm" />
+                  <Textarea value={draft.notes} onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))} className="mt-1 min-h-100 font-mono text-sm" />
                 </div>
               </>
             ) : (

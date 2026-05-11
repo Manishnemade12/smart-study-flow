@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChunkChunkIdRouteImport } from './routes/chunk.$chunkId'
@@ -17,6 +18,11 @@ import { Route as ChunkChunkIdRouteImport } from './routes/chunk.$chunkId'
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -38,12 +44,14 @@ const ChunkChunkIdRoute = ChunkChunkIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/dashboard': typeof DashboardRoute
   '/search': typeof SearchRoute
   '/chunk/$chunkId': typeof ChunkChunkIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/dashboard': typeof DashboardRoute
   '/search': typeof SearchRoute
   '/chunk/$chunkId': typeof ChunkChunkIdRoute
 }
@@ -51,20 +59,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/dashboard': typeof DashboardRoute
   '/search': typeof SearchRoute
   '/chunk/$chunkId': typeof ChunkChunkIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/search' | '/chunk/$chunkId'
+  fullPaths: '/' | '/auth' | '/dashboard' | '/search' | '/chunk/$chunkId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/search' | '/chunk/$chunkId'
-  id: '__root__' | '/' | '/auth' | '/search' | '/chunk/$chunkId'
+  to: '/' | '/auth' | '/dashboard' | '/search' | '/chunk/$chunkId'
+  id: '__root__' | '/' | '/auth' | '/dashboard' | '/search' | '/chunk/$chunkId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  DashboardRoute: typeof DashboardRoute
   SearchRoute: typeof SearchRoute
   ChunkChunkIdRoute: typeof ChunkChunkIdRoute
 }
@@ -76,6 +86,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -105,6 +122,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  DashboardRoute: DashboardRoute,
   SearchRoute: SearchRoute,
   ChunkChunkIdRoute: ChunkChunkIdRoute,
 }
