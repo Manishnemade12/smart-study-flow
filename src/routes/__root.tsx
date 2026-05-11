@@ -7,6 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
@@ -85,6 +86,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       {
+        rel: "manifest",
+        href: "/manifest.webmanifest",
+      },
+      {
         rel: "stylesheet",
         href: appCss,
       },
@@ -115,10 +120,37 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ClientCleanup />
       <AuthProvider>
         <Outlet />
         <Toaster richColors position="top-right" />
       </AuthProvider>
     </QueryClientProvider>
   );
+}
+
+function ClientCleanup() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const cleanup = async () => {
+      try {
+        if ("serviceWorker" in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map((registration) => registration.unregister()));
+        }
+
+        if ("caches" in window) {
+          const cacheNames = await caches.keys();
+          await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+        }
+      } catch (error) {
+        console.warn("Failed to clean up old service worker state", error);
+      }
+    };
+
+    void cleanup();
+  }, []);
+
+  return null;
 }
