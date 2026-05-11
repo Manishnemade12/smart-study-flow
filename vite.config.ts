@@ -1,5 +1,6 @@
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import { nitro } from "nitro/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv, type PluginOption } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
@@ -36,6 +37,14 @@ export default defineConfig(({ mode }) => {
         client: {
           files: ["**/server/**"],
           specifiers: ["server-only"],
+        },
+      },
+    }),
+    nitro({
+      preset: "vercel",
+      vercel: {
+        functions: {
+          runtime: "nodejs22.x",
         },
       },
     }),
