@@ -17,6 +17,14 @@ export const Route = createFileRoute("/")({
 });
 
 function Dashboard() {
+  return (
+    <AppLayout>
+      <DashboardBody />
+    </AppLayout>
+  );
+}
+
+function DashboardBody() {
   const data = useStore();
   const openAdd = useAddContent();
 
@@ -30,8 +38,7 @@ function Dashboard() {
   const recent = [...data.chunks].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 6);
 
   return (
-    <AppLayout>
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-6 md:space-y-10">
+    <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-6 md:space-y-10">
         <section className="rounded-2xl p-6 md:p-8 text-primary-foreground relative overflow-hidden" style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-elegant)" }}>
           <div className="relative z-10 max-w-2xl">
             <div className="inline-flex items-center gap-2 text-xs font-medium bg-white/15 backdrop-blur px-3 py-1 rounded-full mb-4">
@@ -88,8 +95,7 @@ function Dashboard() {
             </div>
           )}
         </section>
-      </div>
-    </AppLayout>
+    </div>
   );
 }
 
