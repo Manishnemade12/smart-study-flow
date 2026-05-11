@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { useStore } from "@/lib/store";
+import { useAddContent } from "@/lib/add-content";
 import { Sparkles, BookOpen, ListChecks, TrendingUp, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AddContentDialog } from "@/components/AddContentDialog";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -17,8 +17,16 @@ export const Route = createFileRoute("/")({
 });
 
 function Dashboard() {
+  return (
+    <AppLayout>
+      <DashboardBody />
+    </AppLayout>
+  );
+}
+
+function DashboardBody() {
   const data = useStore();
-  const [open, setOpen] = useState(false);
+  const openAdd = useAddContent();
 
   const stats = useMemo(() => {
     const total = data.chunks.length;
@@ -30,8 +38,7 @@ function Dashboard() {
   const recent = [...data.chunks].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 6);
 
   return (
-    <AppLayout>
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-6 md:space-y-10">
+    <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-6 md:space-y-10">
         <section className="rounded-2xl p-6 md:p-8 text-primary-foreground relative overflow-hidden" style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-elegant)" }}>
           <div className="relative z-10 max-w-2xl">
             <div className="inline-flex items-center gap-2 text-xs font-medium bg-white/15 backdrop-blur px-3 py-1 rounded-full mb-4">
@@ -39,7 +46,7 @@ function Dashboard() {
             </div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">Turn long ChatGPT chats into perfectly organized SSC notes.</h1>
             <p className="mt-3 text-sm md:text-base text-primary-foreground/85">Paste any conversation. We detect subjects, chapters, key terms and quiz questions — instantly.</p>
-            <Button onClick={() => setOpen(true)} variant="secondary" className="mt-6 gap-2">
+            <Button onClick={() => openAdd()} variant="secondary" className="mt-6 gap-2">
               <Plus className="w-4 h-4" /> Add new content
             </Button>
           </div>
@@ -60,7 +67,7 @@ function Dashboard() {
               <Sparkles className="w-8 h-8 mx-auto text-muted-foreground mb-3" />
               <h3 className="font-medium">No notes yet</h3>
               <p className="text-sm text-muted-foreground mt-1 mb-4">Paste your first ChatGPT conversation to get started.</p>
-              <Button onClick={() => setOpen(true)} className="gap-2" style={{ background: "var(--gradient-primary)" }}>
+              <Button onClick={() => openAdd()} className="gap-2" style={{ background: "var(--gradient-primary)" }}>
                 <Plus className="w-4 h-4" /> Add content
               </Button>
             </div>
@@ -88,9 +95,7 @@ function Dashboard() {
             </div>
           )}
         </section>
-      </div>
-      <AddContentDialog open={open} onOpenChange={setOpen} />
-    </AppLayout>
+    </div>
   );
 }
 

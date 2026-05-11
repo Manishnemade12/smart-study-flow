@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight, BookOpen, Plus, Trash2 } from "lucide-react";
 import { useStore, useStoreActions } from "@/lib/store";
+import { useAddContent } from "@/lib/add-content";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,7 @@ export function Sidebar({ onAdd }: { onAdd: () => void }) {
 export function SidebarInner({ onAdd, onNavigate }: { onAdd: () => void; onNavigate?: () => void }) {
   const data = useStore();
   const actions = useStoreActions();
+  const openAdd = useAddContent();
   const params = useParams({ strict: false }) as { chunkId?: string };
   const activeId = params.chunkId;
   const [openSubjects, setOpenSubjects] = useState<Record<string, boolean>>({});
@@ -69,6 +71,14 @@ export function SidebarInner({ onAdd, onNavigate }: { onAdd: () => void; onNavig
                 {open ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                 <span className="font-medium text-sm flex-1 text-left">{subject.name}</span>
                 <span className="text-xs text-muted-foreground">{roots.length}</span>
+                <Plus
+                  className="w-4 h-4 text-muted-foreground opacity-60 md:opacity-0 group-hover:opacity-100 hover:text-primary ml-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openAdd({ subjectId: subject.id });
+                    onNavigate?.();
+                  }}
+                />
                 <Trash2
                   className="w-4 h-4 text-muted-foreground opacity-60 md:opacity-0 group-hover:opacity-100 hover:text-destructive ml-1"
                   onClick={(e) => {

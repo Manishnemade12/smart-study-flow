@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Sidebar, SidebarInner } from "./Sidebar";
-import { AddContentDialog } from "./AddContentDialog";
+import { AddContentProvider, useAddContent } from "@/lib/add-content";
 import { Search, LogOut, Loader2, Menu, BookOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const navigate = useNavigate();
@@ -33,15 +32,50 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
+    <AddContentProvider>
+      <LayoutShell
+        q={q}
+        setQ={setQ}
+        mobileNavOpen={mobileNavOpen}
+        setMobileNavOpen={setMobileNavOpen}
+        userEmail={user.email!}
+        onSignOut={() => signOut().then(() => navigate({ to: "/auth" }))}
+      >
+        {children}
+      </LayoutShell>
+    </AddContentProvider>
+  );
+}
+
+function LayoutShell({
+  children,
+  q,
+  setQ,
+  mobileNavOpen,
+  setMobileNavOpen,
+  userEmail,
+  onSignOut,
+}: {
+  children: React.ReactNode;
+  q: string;
+  setQ: (v: string) => void;
+  mobileNavOpen: boolean;
+  setMobileNavOpen: (v: boolean) => void;
+  userEmail: string;
+  onSignOut: () => void;
+}) {
+  const navigate = useNavigate();
+  const openAdd = useAddContent();
+  return (
     <div className="min-h-screen flex" style={{ background: "var(--gradient-subtle)" }}>
-      <Sidebar onAdd={() => setOpen(true)} />
+      <Sidebar onAdd={() => openAdd()} />
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <SheetContent side="left" className="p-0 w-[85vw] max-w-xs sm:max-w-sm">
           <SheetHeader className="sr-only">
             <SheetTitle>Navigation</SheetTitle>
           </SheetHeader>
           <SidebarInner
-            onAdd={() => setOpen(true)}
+            onAdd={() => openAdd()}
             onNavigate={() => setMobileNavOpen(false)}
           />
         </SheetContent>
@@ -78,15 +112,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             />
           </form>
           <div className="flex items-center gap-1 md:gap-2 text-sm text-muted-foreground shrink-0">
-            <span className="hidden md:inline">{user.email}</span>
-            <Button variant="ghost" size="sm" onClick={() => signOut().then(() => navigate({ to: "/auth" }))} className="gap-1.5 px-2 md:px-3">
+            <span className="hidden md:inline">{userEmail}</span>
+            <Button variant="ghost" size="sm" onClick={onSignOut} className="gap-1.5 px-2 md:px-3">
               <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Sign out</span>
             </Button>
           </div>
         </header>
         <main className="flex-1 min-w-0">{children}</main>
       </div>
-      <AddContentDialog open={open} onOpenChange={setOpen} />
     </div>
   );
 }

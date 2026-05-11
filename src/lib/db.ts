@@ -98,17 +98,73 @@ export async function fetchAll(): Promise<{ subjects: Subject[]; chunks: Chunk[]
 export async function importTree(
   userId: string,
   tree: { subjects: Array<{ name: string; description?: string; chunks: any[] }> },
+  target?: { subjectId?: string; parentChunkId?: string },
 ) {
-  for (const s of tree.subjects) {
-    // Find existing subject by name (case-insensitive)
-    const { data: existing } = await supabase
-      .from("subjects")
-      .select("id")
-      .eq("user_id", userId)
-      .ilike("name", s.name)
-      .maybeSingle();
+  // If targeting a parent chunk, all incoming chunks become children of that chunk
+  if (target?.parentChunkId) {
+    const { data: parent, error: pErr } = await supabase
+      .from("chunks")
+      .select("subject_id")
+      .eq("id", target.parentChunkId)
+      .single();
+    if (pErr) throw pErr;
+    const subjectId = parent.subject_id;
 
-    let subjectId = existing?.id;
+    const { count } = await supabase
+      .from("chunks")
+      .select("id", { count: "exact", head: true })
+      .eq("parent_chunk_id", target.parentChunkId);
+    let baseOrder = count ?? 0;
+
+    const flat = tree.subjects.flatMap((s) => s.chunks);
+    for (let i = 0; i < flat.length; i++) {
+      const c = flat[i];
+      const { data: row, error } = await supabase
+        .from("chunks")
+        .insert({
+          user_id: userId,
+          subject_id: subjectId,
+          parent_chunk_id: target.parentChunkId,
+          title: c.title,
+          order: baseOrder + i,
+          summary: c.summary ?? "",
+          notes: c.notes ?? "",
+          key_points: c.keyPoints ?? [],
+          terms: c.terms ?? [],
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      const quizRows = (c.quiz ?? []).map((q: any, qi: number) => ({
+        user_id: userId,
+        chunk_id: row.id,
+        question: q.question,
+        type: q.type,
+        options: q.options ?? null,
+        answer: q.answer,
+        explanation: q.explanation ?? null,
+        order: qi,
+      }));
+      if (quizRows.length) {
+        const { error: qErr } = await supabase.from("quiz_questions").insert(quizRows);
+        if (qErr) throw qErr;
+      }
+    }
+    return;
+  }
+
+  for (const s of tree.subjects) {
+    let subjectId: string | undefined = target?.subjectId;
+    if (!subjectId) {
+      // Find existing subject by name (case-insensitive)
+      const { data: existing } = await supabase
+        .from("subjects")
+        .select("id")
+        .eq("user_id", userId)
+        .ilike("name", s.name)
+        .maybeSingle();
+      subjectId = existing?.id;
+    }
     if (!subjectId) {
       const { data, error } = await supabase
         .from("subjects")

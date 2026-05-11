@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Quiz } from "@/components/Quiz";
-import { Pencil, Save, X, Trash2, CheckCircle2, Circle, ChevronRight } from "lucide-react";
+import { Pencil, Save, X, Trash2, CheckCircle2, Circle, ChevronRight, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { useAddContent } from "@/lib/add-content";
 
 export const Route = createFileRoute("/chunk/$chunkId")({
   component: ChunkPage,
@@ -20,6 +21,7 @@ function ChunkPage() {
   const data = useStore();
   const actions = useStoreActions();
   const navigate = useNavigate();
+  const openAdd = useAddContent();
   const chunk = data.chunks.find((c) => c.id === chunkId);
   const subject = chunk ? data.subjects.find((s) => s.id === chunk.subjectId) : null;
   const [editing, setEditing] = useState(false);
@@ -106,6 +108,14 @@ function ChunkPage() {
             ) : (
               <Button size="sm" variant="outline" onClick={startEdit} className="gap-2"><Pencil className="w-4 h-4" /> Edit</Button>
             )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => openAdd({ parentChunkId: chunk.id })}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" /> Add more notes
+            </Button>
             <Button size="sm" variant="ghost" onClick={del} className="gap-2 text-destructive hover:text-destructive ml-auto">
               <Trash2 className="w-4 h-4" /> Delete
             </Button>

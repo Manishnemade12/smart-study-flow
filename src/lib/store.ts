@@ -20,9 +20,9 @@ export function useStoreActions() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return {
-    async importTree(tree: any) {
+    async importTree(tree: any, target?: { subjectId?: string; parentChunkId?: string }) {
       if (!user) throw new Error("Not signed in");
-      await dbImportTree(user.id, tree);
+      await dbImportTree(user.id, tree, target);
       await qc.invalidateQueries({ queryKey: QUERY_KEY });
     },
     async updateChunk(id: string, patch: Partial<Chunk>) {
