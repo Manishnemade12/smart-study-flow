@@ -276,3 +276,67 @@ export async function deleteSubject(id: string) {
   const { error } = await supabase.from("subjects").delete().eq("id", id);
   if (error) throw error;
 }
+
+export async function createChunkManual(
+  userId: string,
+  input: {
+    subjectId?: string;
+    newSubjectName?: string;
+    parentChunkId?: string;
+    title: string;
+    summary?: string;
+    notes?: string;
+    keyPoints?: string[];
+  },
+): Promise<string> {
+  let subjectId = input.subjectId;
+
+  // Resolve subject from parent chunk if provided
+  if (!subjectId && input.parentChunkId) {
+    const { data: parent, error } = await supabase
+      .from("chunks").select("subject_id").eq("id", input.parentChunkId).single();
+    if (error) throw error;
+    subjectId = parent.subject_id;
+  }
+
+  // Create new subject if needed
+  if (!subjectId) {
+    const name = (input.newSubjectName ?? "").trim();
+    if (!name) throw new Error("Choose a subject or enter a new subject name");
+    const { data: existing } = await supabase
+      .from("subjects").select("id").eq("user_id", userId).ilike("name", name).maybeSingle();
+    if (existing?.id) {
+      subjectId = existing.id;
+    } else {
+      const { data, error } = await supabase
+        .from("subjects").insert({ user_id: userId, name, description: "" }).select("id").single();
+      if (error) throw error;
+      subjectId = data.id;
+    }
+  }
+
+  // Compute next order
+  const orderQuery = supabase
+    .from("chunks").select("id", { count: "exact", head: true }).eq("subject_id", subjectId);
+  const { count } = await (input.parentChunkId
+    ? orderQuery.eq("parent_chunk_id", input.parentChunkId)
+    : orderQuery.is("parent_chunk_id", null));
+
+  const { data: row, error } = await supabase
+    .from("chunks")
+    .insert({
+      user_id: userId,
+      subject_id: subjectId,
+      parent_chunk_id: input.parentChunkId ?? null,
+      title: input.title.trim() || "Untitled",
+      order: count ?? 0,
+      summary: input.summary ?? "",
+      notes: input.notes ?? "",
+      key_points: input.keyPoints ?? [],
+      terms: [],
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return row.id;
+}
