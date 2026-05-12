@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
-import { ChevronDown, ChevronRight, BookOpen, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, BookOpen, Plus, Trash2, Zap, Settings } from "lucide-react";
 import { useStore, useStoreActions } from "@/lib/store";
 import { useAddContent } from "@/lib/add-content";
 import { Button } from "@/components/ui/button";
@@ -79,13 +79,31 @@ export function SidebarInner({ onAdd, onNavigate }: { onAdd: () => void; onNavig
           <InstallButtonCompact />
         </div>
       </div>
-      <div className="p-3">
+      <div className="p-3 space-y-2 border-b">
         <Button onClick={() => { onAdd(); onNavigate?.(); }} className="w-full gap-2" style={{ background: "var(--gradient-primary)" }}>
           <Plus className="w-4 h-4" /> Add content
         </Button>
-        <Button onClick={handleAddSubject} variant="outline" className="w-full gap-2 mt-2">
+        <Button onClick={handleAddSubject} variant="outline" className="w-full gap-2">
           <Plus className="w-4 h-4" /> Add subject
         </Button>
+        
+        {/* Daily Quiz Section */}
+        <div className="pt-2 space-y-1">
+          <Link
+            to="/daily-quiz"
+            onClick={() => onNavigate?.()}
+            className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm font-medium text-left hover:bg-accent/50 transition-colors"
+          >
+            <Zap className="w-4 h-4 text-yellow-500" /> Daily Quizzes
+          </Link>
+          <Link
+            to="/daily-quiz-settings"
+            onClick={() => onNavigate?.()}
+            className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm text-left hover:bg-accent/50 transition-colors"
+          >
+            <Settings className="w-4 h-4 text-gray-600 dark:text-gray-400" /> Quiz Settings
+          </Link>
+        </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 pb-4 space-y-1">

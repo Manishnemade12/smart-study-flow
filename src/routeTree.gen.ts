@@ -11,8 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DailyQuizSettingsRouteImport } from './routes/daily-quiz-settings'
+import { Route as DailyQuizResultRouteImport } from './routes/daily-quiz-result'
+import { Route as DailyQuizRouteImport } from './routes/daily-quiz'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DailyQuizSubjectIdRouteImport } from './routes/daily-quiz.$subjectId'
 import { Route as ChunkChunkIdRouteImport } from './routes/chunk.$chunkId'
 
 const SearchRoute = SearchRouteImport.update({
@@ -25,6 +29,21 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DailyQuizSettingsRoute = DailyQuizSettingsRouteImport.update({
+  id: '/daily-quiz-settings',
+  path: '/daily-quiz-settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DailyQuizResultRoute = DailyQuizResultRouteImport.update({
+  id: '/daily-quiz-result',
+  path: '/daily-quiz-result',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DailyQuizRoute = DailyQuizRouteImport.update({
+  id: '/daily-quiz',
+  path: '/daily-quiz',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -35,6 +54,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DailyQuizSubjectIdRoute = DailyQuizSubjectIdRouteImport.update({
+  id: '/$subjectId',
+  path: '/$subjectId',
+  getParentRoute: () => DailyQuizRoute,
+} as any)
 const ChunkChunkIdRoute = ChunkChunkIdRouteImport.update({
   id: '/chunk/$chunkId',
   path: '/chunk/$chunkId',
@@ -44,36 +68,79 @@ const ChunkChunkIdRoute = ChunkChunkIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/daily-quiz': typeof DailyQuizRouteWithChildren
+  '/daily-quiz-result': typeof DailyQuizResultRoute
+  '/daily-quiz-settings': typeof DailyQuizSettingsRoute
   '/dashboard': typeof DashboardRoute
   '/search': typeof SearchRoute
   '/chunk/$chunkId': typeof ChunkChunkIdRoute
+  '/daily-quiz/$subjectId': typeof DailyQuizSubjectIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/daily-quiz': typeof DailyQuizRouteWithChildren
+  '/daily-quiz-result': typeof DailyQuizResultRoute
+  '/daily-quiz-settings': typeof DailyQuizSettingsRoute
   '/dashboard': typeof DashboardRoute
   '/search': typeof SearchRoute
   '/chunk/$chunkId': typeof ChunkChunkIdRoute
+  '/daily-quiz/$subjectId': typeof DailyQuizSubjectIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/daily-quiz': typeof DailyQuizRouteWithChildren
+  '/daily-quiz-result': typeof DailyQuizResultRoute
+  '/daily-quiz-settings': typeof DailyQuizSettingsRoute
   '/dashboard': typeof DashboardRoute
   '/search': typeof SearchRoute
   '/chunk/$chunkId': typeof ChunkChunkIdRoute
+  '/daily-quiz/$subjectId': typeof DailyQuizSubjectIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/search' | '/chunk/$chunkId'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/daily-quiz'
+    | '/daily-quiz-result'
+    | '/daily-quiz-settings'
+    | '/dashboard'
+    | '/search'
+    | '/chunk/$chunkId'
+    | '/daily-quiz/$subjectId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/search' | '/chunk/$chunkId'
-  id: '__root__' | '/' | '/auth' | '/dashboard' | '/search' | '/chunk/$chunkId'
+  to:
+    | '/'
+    | '/auth'
+    | '/daily-quiz'
+    | '/daily-quiz-result'
+    | '/daily-quiz-settings'
+    | '/dashboard'
+    | '/search'
+    | '/chunk/$chunkId'
+    | '/daily-quiz/$subjectId'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/daily-quiz'
+    | '/daily-quiz-result'
+    | '/daily-quiz-settings'
+    | '/dashboard'
+    | '/search'
+    | '/chunk/$chunkId'
+    | '/daily-quiz/$subjectId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  DailyQuizRoute: typeof DailyQuizRouteWithChildren
+  DailyQuizResultRoute: typeof DailyQuizResultRoute
+  DailyQuizSettingsRoute: typeof DailyQuizSettingsRoute
   DashboardRoute: typeof DashboardRoute
   SearchRoute: typeof SearchRoute
   ChunkChunkIdRoute: typeof ChunkChunkIdRoute
@@ -95,6 +162,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/daily-quiz-settings': {
+      id: '/daily-quiz-settings'
+      path: '/daily-quiz-settings'
+      fullPath: '/daily-quiz-settings'
+      preLoaderRoute: typeof DailyQuizSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/daily-quiz-result': {
+      id: '/daily-quiz-result'
+      path: '/daily-quiz-result'
+      fullPath: '/daily-quiz-result'
+      preLoaderRoute: typeof DailyQuizResultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/daily-quiz': {
+      id: '/daily-quiz'
+      path: '/daily-quiz'
+      fullPath: '/daily-quiz'
+      preLoaderRoute: typeof DailyQuizRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -109,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/daily-quiz/$subjectId': {
+      id: '/daily-quiz/$subjectId'
+      path: '/$subjectId'
+      fullPath: '/daily-quiz/$subjectId'
+      preLoaderRoute: typeof DailyQuizSubjectIdRouteImport
+      parentRoute: typeof DailyQuizRoute
+    }
     '/chunk/$chunkId': {
       id: '/chunk/$chunkId'
       path: '/chunk/$chunkId'
@@ -119,9 +214,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface DailyQuizRouteChildren {
+  DailyQuizSubjectIdRoute: typeof DailyQuizSubjectIdRoute
+}
+
+const DailyQuizRouteChildren: DailyQuizRouteChildren = {
+  DailyQuizSubjectIdRoute: DailyQuizSubjectIdRoute,
+}
+
+const DailyQuizRouteWithChildren = DailyQuizRoute._addFileChildren(
+  DailyQuizRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  DailyQuizRoute: DailyQuizRouteWithChildren,
+  DailyQuizResultRoute: DailyQuizResultRoute,
+  DailyQuizSettingsRoute: DailyQuizSettingsRoute,
   DashboardRoute: DashboardRoute,
   SearchRoute: SearchRoute,
   ChunkChunkIdRoute: ChunkChunkIdRoute,
