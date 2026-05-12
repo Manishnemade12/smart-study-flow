@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { useStore } from "@/lib/store";
 import { useAddContent } from "@/lib/add-content";
-import { Sparkles, BookOpen, ListChecks, TrendingUp, Plus } from "lucide-react";
+import { Sparkles, BookOpen, ListChecks, TrendingUp, Plus, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PwaInstallCard } from "@/components/PwaInstallCard";
+import { GlobalQuizDialog } from "@/components/GlobalQuizDialog";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -25,6 +26,7 @@ function Dashboard() {
 function DashboardBody() {
   const data = useStore();
   const openAdd = useAddContent();
+  const [quizOpen, setQuizOpen] = useState(false);
 
   const stats = useMemo(() => {
     const total = data.chunks.length;
@@ -51,9 +53,19 @@ function DashboardBody() {
           <p className="mt-3 text-sm text-primary-foreground/85 md:text-base">
             Paste any conversation. We detect subjects, chapters, key terms and quiz questions instantly.
           </p>
-          <Button onClick={() => openAdd()} variant="secondary" className="mt-6 gap-2">
-            <Plus className="h-4 w-4" /> Add new content
-          </Button>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Button onClick={() => openAdd()} variant="secondary" className="gap-2">
+              <Plus className="h-4 w-4" /> Add new content
+            </Button>
+            <Button
+              onClick={() => setQuizOpen(true)}
+              variant="outline"
+              className="gap-2 bg-white/10 border-white/30 text-primary-foreground hover:bg-white/20 hover:text-primary-foreground"
+              disabled={data.subjects.length === 0}
+            >
+              <Brain className="h-4 w-4" /> Generate quiz
+            </Button>
+          </div>
         </div>
         <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
       </section>
@@ -105,6 +117,7 @@ function DashboardBody() {
         <h2 className="mb-4 mt-6 text-lg font-semibold">Install App</h2>
         <PwaInstallCard />
       </section>
+      <GlobalQuizDialog open={quizOpen} onOpenChange={setQuizOpen} />
     </div>
   );
 }
