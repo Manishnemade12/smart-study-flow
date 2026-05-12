@@ -3,15 +3,16 @@ import { useNavigate } from "@tanstack/react-router";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, ArrowLeft, Check } from "lucide-react";
+import { Loader2, Sparkles, ArrowLeft, Check, PencilLine } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useStore, useStoreActions } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 
 type Step = "input" | "loading" | "preview";
-type Mode = "auto" | "subject" | "chunk";
+type Mode = "auto" | "subject" | "chunk" | "manual";
 
 interface PreviewTree {
   subjects: Array<{
@@ -51,6 +52,8 @@ export function AddContentDialog({
   const [mode, setMode] = useState<Mode>("auto");
   const [subjectId, setSubjectId] = useState<string | undefined>();
   const [parentChunkId, setParentChunkId] = useState<string | undefined>();
+  const [manual, setManual] = useState({ title: "", summary: "", notes: "", newSubjectName: "" });
+  const [savingManual, setSavingManual] = useState(false);
   const navigate = useNavigate();
   const actions = useStoreActions();
 
@@ -83,6 +86,7 @@ export function AddContentDialog({
     setStep("input");
     setText("");
     setTree(null);
+    setManual({ title: "", summary: "", notes: "", newSubjectName: "" });
   }
 
   async function organize() {
@@ -165,6 +169,36 @@ export function AddContentDialog({
   const targetSubject = subjectId ? data.subjects.find((s) => s.id === subjectId) : null;
   const targetChunk = parentChunkId ? data.chunks.find((c) => c.id === parentChunkId) : null;
 
+  async function saveManual() {
+    if (!manual.title.trim()) {
+      toast.error("Enter a chunk title");
+      return;
+    }
+    if (!subjectId && !parentChunkId && !manual.newSubjectName.trim()) {
+      toast.error("Choose a subject or enter a new subject name");
+      return;
+    }
+    setSavingManual(true);
+    try {
+      const id = await actions.createChunkManual({
+        subjectId: parentChunkId ? undefined : subjectId,
+        newSubjectName: !subjectId && !parentChunkId ? manual.newSubjectName.trim() : undefined,
+        parentChunkId,
+        title: manual.title,
+        summary: manual.summary,
+        notes: manual.notes,
+      });
+      toast.success("Chunk created");
+      onOpenChange(false);
+      reset();
+      navigate({ to: "/chunk/$chunkId", params: { chunkId: id } });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to create chunk");
+    } finally {
+      setSavingManual(false);
+    }
+  }
+
   return (
     <Dialog
       open={open}
@@ -176,11 +210,13 @@ export function AddContentDialog({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            {step === "preview" ? "Review detected structure" : "Add study content"}
+            {mode === "manual" ? <PencilLine className="w-5 h-5 text-primary" /> : <Sparkles className="w-5 h-5 text-primary" />}
+            {step === "preview" ? "Review detected structure" : mode === "manual" ? "Create a chunk manually" : "Add study content"}
           </DialogTitle>
           <DialogDescription>
-            {step === "input" && "Paste a ChatGPT conversation or notes. Choose where it should go — a brand new structure, an existing subject, or as sub-topics under a chunk."}
+            {step === "input" && (mode === "manual"
+              ? "Write a chunk yourself — title, summary and notes. No AI involved."
+              : "Paste a ChatGPT conversation or notes. Choose where it should go — a brand new structure, an existing subject, or as sub-topics under a chunk.")}
             {step === "loading" && "Analyzing content and detecting topics…"}
             {step === "preview" && (
               mode === "chunk" && targetChunk
@@ -196,18 +232,19 @@ export function AddContentDialog({
           <div className="flex-1 overflow-y-auto space-y-4">
             <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
               <div>
-                <Label className="text-xs font-medium">Where should this go?</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-                  <ModeBtn active={mode === "auto"} onClick={() => setMode("auto")} title="New / auto" desc="Create or merge subjects" />
+                <Label className="text-xs font-medium">How do you want to add?</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+                  <ModeBtn active={mode === "auto"} onClick={() => setMode("auto")} title="AI · New" desc="Auto-detect subjects" />
                   <ModeBtn active={mode === "subject"} onClick={() => setMode("subject")} disabled={!subjectOptions.length} title="Existing subject" desc="Append new chunks" />
                   <ModeBtn active={mode === "chunk"} onClick={() => setMode("chunk")} disabled={!data.chunks.length} title="Under a chunk" desc="Add as sub-topics" />
+                  <ModeBtn active={mode === "manual"} onClick={() => setMode("manual")} title="Manual" desc="Write it yourself" />
                 </div>
               </div>
 
-              {mode === "subject" && (
+              {(mode === "subject" || (mode === "manual" && !parentChunkId)) && (
                 <div>
-                  <Label className="text-xs">Subject</Label>
-                  <Select value={subjectId} onValueChange={setSubjectId}>
+                  <Label className="text-xs">Subject {mode === "manual" && "(optional if creating new)"}</Label>
+                  <Select value={subjectId} onValueChange={(v) => setSubjectId(v)}>
                     <SelectTrigger className="mt-1"><SelectValue placeholder="Choose subject…" /></SelectTrigger>
                     <SelectContent>
                       {subjectOptions.map((s) => (
@@ -215,10 +252,18 @@ export function AddContentDialog({
                       ))}
                     </SelectContent>
                   </Select>
+                  {mode === "manual" && !subjectId && (
+                    <Input
+                      value={manual.newSubjectName}
+                      onChange={(e) => setManual((m) => ({ ...m, newSubjectName: e.target.value }))}
+                      placeholder="Or type a new subject name…"
+                      className="mt-2"
+                    />
+                  )}
                 </div>
               )}
 
-              {mode === "chunk" && (
+              {(mode === "chunk" || mode === "manual") && data.chunks.length > 0 && (
                 <div className="grid sm:grid-cols-2 gap-2">
                   <div>
                     <Label className="text-xs">Subject (filter)</Label>
@@ -232,9 +277,9 @@ export function AddContentDialog({
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-xs">Parent chunk</Label>
+                    <Label className="text-xs">Parent chunk {mode === "manual" && "(optional)"}</Label>
                     <Select value={parentChunkId} onValueChange={setParentChunkId}>
-                      <SelectTrigger className="mt-1"><SelectValue placeholder="Choose chunk…" /></SelectTrigger>
+                      <SelectTrigger className="mt-1"><SelectValue placeholder={mode === "manual" ? "None — top level" : "Choose chunk…"} /></SelectTrigger>
                       <SelectContent>
                         {chunkOptions.map((c) => (
                           <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
@@ -246,18 +291,59 @@ export function AddContentDialog({
               )}
             </div>
 
-            <Textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Paste your ChatGPT conversation or syllabus here…"
-              className="min-h-[260px] font-mono text-sm"
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button onClick={organize} className="gap-2" style={{ background: "var(--gradient-primary)" }}>
-                <Sparkles className="w-4 h-4" /> Organize with AI
-              </Button>
-            </div>
+            {mode === "manual" ? (
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs">Title</Label>
+                  <Input
+                    value={manual.title}
+                    onChange={(e) => setManual((m) => ({ ...m, title: e.target.value }))}
+                    placeholder="e.g. Mughal Empire — Akbar"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Summary (1–2 lines)</Label>
+                  <Textarea
+                    value={manual.summary}
+                    onChange={(e) => setManual((m) => ({ ...m, summary: e.target.value }))}
+                    placeholder="Short overview of this chunk…"
+                    className="mt-1 min-h-[70px]"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Notes (markdown supported)</Label>
+                  <Textarea
+                    value={manual.notes}
+                    onChange={(e) => setManual((m) => ({ ...m, notes: e.target.value }))}
+                    placeholder={"# Heading\n- bullet\n- bullet\n\nWrite your notes here…"}
+                    className="mt-1 min-h-[220px] font-mono text-sm"
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                  <Button onClick={saveManual} disabled={savingManual} className="gap-2" style={{ background: "var(--gradient-primary)" }}>
+                    {savingManual ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    {savingManual ? "Creating…" : "Create chunk"}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <Textarea
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="Paste your ChatGPT conversation or syllabus here…"
+                  className="min-h-[260px] font-mono text-sm"
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                  <Button onClick={organize} className="gap-2" style={{ background: "var(--gradient-primary)" }}>
+                    <Sparkles className="w-4 h-4" /> Organize with AI
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
