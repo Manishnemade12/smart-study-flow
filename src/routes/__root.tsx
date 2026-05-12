@@ -77,7 +77,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "SSC Smart Notes" },
       { name: "description", content: "Offline-ready SSC study notes and revision app." },
-      { name: "theme-color", content: "#f4efe7" },
+      { name: "theme-color", content: "#0b1220" },
       { name: "author", content: "SSC Smart Notes" },
       { property: "og:title", content: "SSC Smart Notes" },
       { property: "og:description", content: "Offline-ready SSC study notes and revision app." },
@@ -109,11 +109,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="dark bg-background text-foreground">
         {children}
         <Scripts />
       </body>
@@ -129,7 +129,7 @@ function RootComponent() {
       <PwaBootstrap />
       <AuthProvider>
         <Outlet />
-        <Toaster richColors position="top-right" />
+        <Toaster richColors position="top-right" theme="dark" />
       </AuthProvider>
     </QueryClientProvider>
   );
