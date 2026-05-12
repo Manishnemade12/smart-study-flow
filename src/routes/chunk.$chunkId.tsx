@@ -40,6 +40,39 @@ function ChunkPage() {
     return trail;
   }, [chunk, data]);
 
+  const subjectChunks = useMemo(() => {
+    if (!subject) return [];
+
+    const childrenByParent = new Map<string | null, typeof data.chunks>();
+    const subjectChunksOnly = data.chunks
+      .filter((c) => c.subjectId === subject.id)
+      .sort((a, b) => a.order - b.order);
+
+    for (const item of subjectChunksOnly) {
+      const parentKey = item.parentChunkId;
+      const existing = childrenByParent.get(parentKey) ?? [];
+      childrenByParent.set(parentKey, [...existing, item]);
+    }
+
+    const ordered: typeof subjectChunksOnly = [];
+    const visit = (parentId: string | null) => {
+      const children = childrenByParent.get(parentId) ?? [];
+      for (const child of children) {
+        ordered.push(child);
+        visit(child.id);
+      }
+    };
+
+    visit(null);
+    return ordered;
+  }, [data.chunks, subject]);
+
+  const nextChunk = useMemo(() => {
+    if (!chunk) return null;
+    const index = subjectChunks.findIndex((item) => item.id === chunk.id);
+    return index >= 0 ? subjectChunks[index + 1] ?? null : null;
+  }, [chunk, subjectChunks]);
+
   if (!chunk || !subject) {
     return (
       <AppLayout>
@@ -190,6 +223,16 @@ function ChunkPage() {
             <Quiz questions={chunk.quiz} />
           </TabsContent>
         </Tabs>
+
+        {nextChunk && (
+          <div className="mt-6 flex justify-end">
+            <Button size="sm" asChild className="gap-2" style={{ background: "var(--gradient-primary)" }}>
+              <Link to="/chunk/$chunkId" params={{ chunkId: nextChunk.id }}>
+                Next <ChevronRight className="w-4 h-4" />
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
     </AppLayout>
   );

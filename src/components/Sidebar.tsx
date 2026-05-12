@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight, BookOpen, Plus, Trash2, Zap, Settings } from "lucide-react";
 import { useStore, useStoreActions } from "@/lib/store";
@@ -22,22 +22,102 @@ function InstallButtonCompact() {
   );
 }
 
-export function Sidebar({ onAdd }: { onAdd: () => void }) {
+export function Sidebar({
+  onAdd,
+  openSubjects,
+  setOpenSubjects,
+  openChunks,
+  setOpenChunks,
+}: {
+  onAdd: () => void;
+  openSubjects: Record<string, boolean>;
+  setOpenSubjects: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  openChunks: Record<string, boolean>;
+  setOpenChunks: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+}) {
   return (
     <aside className="hidden md:flex w-72 shrink-0 border-r bg-card/50 backdrop-blur flex-col h-screen sticky top-0">
-      <SidebarInner onAdd={onAdd} />
+      <SidebarInner
+        onAdd={onAdd}
+        openSubjects={openSubjects}
+        setOpenSubjects={setOpenSubjects}
+        openChunks={openChunks}
+        setOpenChunks={setOpenChunks}
+      />
     </aside>
   );
 }
 
-export function SidebarInner({ onAdd, onNavigate }: { onAdd: () => void; onNavigate?: () => void }) {
+export function SidebarInner({
+  onAdd,
+  onNavigate,
+  mobileScrollTopRef,
+  openSubjects,
+  setOpenSubjects,
+  openChunks,
+  setOpenChunks,
+}: {
+  onAdd: () => void;
+  onNavigate?: () => void;
+  mobileScrollTopRef?: React.MutableRefObject<number>;
+  openSubjects: Record<string, boolean>;
+  setOpenSubjects: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  openChunks: Record<string, boolean>;
+  setOpenChunks: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+}) {
   const data = useStore();
   const actions = useStoreActions();
   const openAdd = useAddContent();
   const params = useParams({ strict: false }) as { chunkId?: string };
   const activeId = params.chunkId;
-  const [openSubjects, setOpenSubjects] = useState<Record<string, boolean>>({});
-  const [openChunks, setOpenChunks] = useState<Record<string, boolean>>({});
+  const navRef = useRef<HTMLElement | null>(null);
+
+  useLayoutEffect(() => {
+    if (!activeId) return;
+
+    const activeChunk = data.chunks.find((chunk) => chunk.id === activeId);
+    if (!activeChunk) return;
+
+    setOpenSubjects((current) => {
+      const subjectId = activeChunk.subjectId;
+      if (current[subjectId]) return current;
+      return { ...current, [subjectId]: true };
+    });
+
+    const ancestorIds: string[] = [];
+    let parentId = activeChunk.parentChunkId;
+    while (parentId) {
+      ancestorIds.push(parentId);
+      const parentChunk = data.chunks.find((chunk) => chunk.id === parentId);
+      parentId = parentChunk?.parentChunkId ?? null;
+    }
+
+    if (ancestorIds.length > 0) {
+      setOpenChunks((current) => {
+        let nextState = current;
+        for (const id of ancestorIds) {
+          if (nextState[id]) continue;
+          if (nextState === current) nextState = { ...current };
+          nextState[id] = true;
+        }
+        return nextState;
+      });
+    }
+  }, [activeId, data.chunks, setOpenChunks, setOpenSubjects]);
+
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    if (!nav || mobileScrollTopRef == null) return;
+
+    nav.scrollTop = mobileScrollTopRef.current;
+  }, [mobileScrollTopRef]);
+
+  const handleNavScroll = () => {
+    const nav = navRef.current;
+    if (!nav || mobileScrollTopRef == null) return;
+
+    mobileScrollTopRef.current = nav.scrollTop;
+  };
 
   const handleAddSubject = async () => {
     const name = prompt("Enter new subject name");
@@ -68,7 +148,10 @@ export function SidebarInner({ onAdd, onNavigate }: { onAdd: () => void; onNavig
   return (
     <div className="flex flex-col h-full w-full min-h-0">
       <div className="p-4 border-b flex items-center gap-2">
-        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-primary-foreground" style={{ background: "var(--gradient-primary)" }}>
+        <div
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-primary-foreground"
+          style={{ background: "var(--gradient-primary)" }}
+        >
           <BookOpen className="w-5 h-5" />
         </div>
         <div>
@@ -80,13 +163,20 @@ export function SidebarInner({ onAdd, onNavigate }: { onAdd: () => void; onNavig
         </div>
       </div>
       <div className="p-3 space-y-2 border-b">
-        <Button onClick={() => { onAdd(); onNavigate?.(); }} className="w-full gap-2" style={{ background: "var(--gradient-primary)" }}>
+        <Button
+          onClick={() => {
+            onAdd();
+            onNavigate?.();
+          }}
+          className="w-full gap-2"
+          style={{ background: "var(--gradient-primary)" }}
+        >
           <Plus className="w-4 h-4" /> Add content
         </Button>
         <Button onClick={handleAddSubject} variant="outline" className="w-full gap-2">
           <Plus className="w-4 h-4" /> Add subject
         </Button>
-        
+
         {/* Daily Quiz Section */}
         <div className="pt-2 space-y-1">
           <Link
@@ -106,21 +196,29 @@ export function SidebarInner({ onAdd, onNavigate }: { onAdd: () => void; onNavig
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2 pb-4 space-y-1">
+      <nav
+        ref={navRef}
+        onScroll={handleNavScroll}
+        className="flex-1 overflow-y-auto px-2 pb-4 space-y-1"
+      >
         {tree.length === 0 && (
           <div className="px-3 py-6 text-sm text-muted-foreground text-center">
             No subjects yet. Paste a ChatGPT conversation to get started.
           </div>
         )}
         {tree.map(({ subject, roots }) => {
-          const open = openSubjects[subject.id] ?? true;
+          const open = openSubjects[subject.id] ?? false;
           return (
             <div key={subject.id}>
               <button
                 onClick={() => setOpenSubjects((s) => ({ ...s, [subject.id]: !open }))}
                 className="w-full flex items-center gap-1 px-2 py-1.5 rounded-md hover:bg-accent/50 group"
               >
-                {open ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                {open ? (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                )}
                 <span className="font-medium text-sm flex-1 text-left">{subject.name}</span>
                 <span className="text-xs text-muted-foreground">{roots.length}</span>
                 <Plus
@@ -144,16 +242,25 @@ export function SidebarInner({ onAdd, onNavigate }: { onAdd: () => void; onNavig
               {open && (
                 <div className="ml-4 border-l pl-2 space-y-0.5 mt-0.5">
                   {roots.map(({ chunk, children }) => {
-                    const chunkOpen = openChunks[chunk.id] ?? true;
+                    const chunkOpen = openChunks[chunk.id] ?? false;
                     return (
                       <div key={chunk.id}>
                         <div className="flex items-center gap-0.5">
                           {children.length > 0 ? (
                             <button
-                              onClick={() => setOpenChunks((s) => ({ ...s, [chunk.id]: !chunkOpen }))}
+                              onClick={() =>
+                                setOpenChunks((s) => ({
+                                  ...s,
+                                  [chunk.id]: !chunkOpen,
+                                }))
+                              }
                               className="p-0.5 rounded hover:bg-accent/50"
                             >
-                              {chunkOpen ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+                              {chunkOpen ? (
+                                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                              ) : (
+                                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                              )}
                             </button>
                           ) : (
                             <span className="w-4" />
@@ -164,7 +271,8 @@ export function SidebarInner({ onAdd, onNavigate }: { onAdd: () => void; onNavig
                             onClick={() => onNavigate?.()}
                             className={cn(
                               "flex-1 px-2 py-2 rounded-md text-sm truncate hover:bg-accent/50 transition-colors",
-                              activeId === chunk.id && "bg-accent text-accent-foreground font-medium",
+                              activeId === chunk.id &&
+                                "bg-accent text-accent-foreground font-medium",
                             )}
                           >
                             {chunk.title}
@@ -181,7 +289,8 @@ export function SidebarInner({ onAdd, onNavigate }: { onAdd: () => void; onNavig
                                 onClick={() => onNavigate?.()}
                                 className={cn(
                                   "block px-2 py-2 rounded-md text-xs truncate hover:bg-accent/50 transition-colors text-muted-foreground",
-                                  activeId === child.id && "bg-accent text-accent-foreground font-medium",
+                                  activeId === child.id &&
+                                    "bg-accent text-accent-foreground font-medium",
                                 )}
                               >
                                 {child.title}

@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sidebar, SidebarInner } from "./Sidebar";
 import { AddContentProvider, useAddContent } from "@/lib/add-content";
 import { Search, LogOut, Loader2, Menu, BookOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -11,13 +11,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [q, setQ] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const mobileSidebarScrollTopRef = useRef(0);
+  const [openSubjects, setOpenSubjects] = useState<Record<string, boolean>>({});
+  const [openChunks, setOpenChunks] = useState<Record<string, boolean>>({});
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-
-  useEffect(() => {
-    setMobileNavOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
@@ -38,6 +36,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         setQ={setQ}
         mobileNavOpen={mobileNavOpen}
         setMobileNavOpen={setMobileNavOpen}
+        mobileSidebarScrollTopRef={mobileSidebarScrollTopRef}
+        openSubjects={openSubjects}
+        setOpenSubjects={setOpenSubjects}
+        openChunks={openChunks}
+        setOpenChunks={setOpenChunks}
         userEmail={user.email!}
         onSignOut={() => signOut().then(() => navigate({ to: "/auth" }))}
       >
@@ -53,6 +56,11 @@ function LayoutShell({
   setQ,
   mobileNavOpen,
   setMobileNavOpen,
+  mobileSidebarScrollTopRef,
+  openSubjects,
+  setOpenSubjects,
+  openChunks,
+  setOpenChunks,
   userEmail,
   onSignOut,
 }: {
@@ -61,6 +69,11 @@ function LayoutShell({
   setQ: (v: string) => void;
   mobileNavOpen: boolean;
   setMobileNavOpen: (v: boolean) => void;
+  mobileSidebarScrollTopRef: React.MutableRefObject<number>;
+  openSubjects: Record<string, boolean>;
+  setOpenSubjects: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  openChunks: Record<string, boolean>;
+  setOpenChunks: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   userEmail: string;
   onSignOut: () => void;
 }) {
@@ -68,7 +81,13 @@ function LayoutShell({
   const openAdd = useAddContent();
   return (
     <div className="min-h-screen flex" style={{ background: "var(--gradient-subtle)" }}>
-      <Sidebar onAdd={() => openAdd()} />
+      <Sidebar
+        onAdd={() => openAdd()}
+        openSubjects={openSubjects}
+        setOpenSubjects={setOpenSubjects}
+        openChunks={openChunks}
+        setOpenChunks={setOpenChunks}
+      />
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <SheetContent side="left" className="p-0 w-[85vw] max-w-xs sm:max-w-sm">
           <SheetHeader className="sr-only">
@@ -76,6 +95,11 @@ function LayoutShell({
           </SheetHeader>
           <SidebarInner
             onAdd={() => openAdd()}
+            mobileScrollTopRef={mobileSidebarScrollTopRef}
+            openSubjects={openSubjects}
+            setOpenSubjects={setOpenSubjects}
+            openChunks={openChunks}
+            setOpenChunks={setOpenChunks}
             onNavigate={() => setMobileNavOpen(false)}
           />
         </SheetContent>
@@ -92,7 +116,10 @@ function LayoutShell({
             <Menu className="w-5 h-5" />
           </Button>
           <div className="md:hidden flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-primary-foreground" style={{ background: "var(--gradient-primary)" }}>
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-primary-foreground"
+              style={{ background: "var(--gradient-primary)" }}
+            >
               <BookOpen className="w-4 h-4" />
             </div>
           </div>
