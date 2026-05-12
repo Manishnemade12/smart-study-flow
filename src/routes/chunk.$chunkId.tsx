@@ -1,6 +1,7 @@
 import { createFileRoute, useParams, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { AppLayout } from "@/components/AppLayout";
 import { useStore, useStoreActions } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -183,7 +184,7 @@ function ChunkPage() {
                   </div>
                 )}
                 <article className="markdown-body">
-                  <ReactMarkdown>{chunk.notes || "*No notes yet.*"}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{chunk.notes || "*No notes yet.*"}</ReactMarkdown>
                 </article>
               </>
             )}
