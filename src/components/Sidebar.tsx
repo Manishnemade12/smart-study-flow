@@ -39,6 +39,17 @@ export function SidebarInner({ onAdd, onNavigate }: { onAdd: () => void; onNavig
   const [openSubjects, setOpenSubjects] = useState<Record<string, boolean>>({});
   const [openChunks, setOpenChunks] = useState<Record<string, boolean>>({});
 
+  const handleAddSubject = async () => {
+    const name = prompt("Enter new subject name");
+    if (!name) return;
+    try {
+      await actions.createSubject(name.trim());
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create subject");
+    }
+  };
+
   const tree = useMemo(() => {
     return data.subjects.map((s) => ({
       subject: s,
@@ -71,6 +82,9 @@ export function SidebarInner({ onAdd, onNavigate }: { onAdd: () => void; onNavig
       <div className="p-3">
         <Button onClick={() => { onAdd(); onNavigate?.(); }} className="w-full gap-2" style={{ background: "var(--gradient-primary)" }}>
           <Plus className="w-4 h-4" /> Add content
+        </Button>
+        <Button onClick={handleAddSubject} variant="outline" className="w-full gap-2 mt-2">
+          <Plus className="w-4 h-4" /> Add subject
         </Button>
       </div>
 

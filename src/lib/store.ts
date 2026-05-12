@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchAll, importTree as dbImportTree, updateChunk as dbUpdateChunk, deleteChunk as dbDeleteChunk, deleteSubject as dbDeleteSubject, createChunkManual as dbCreateChunkManual } from "./db";
+import { fetchAll, importTree as dbImportTree, updateChunk as dbUpdateChunk, deleteChunk as dbDeleteChunk, deleteSubject as dbDeleteSubject, createChunkManual as dbCreateChunkManual, createSubject as dbCreateSubject } from "./db";
 import type { AppData, Chunk } from "./types";
 import { useAuth } from "./auth";
 
@@ -40,6 +40,12 @@ export function useStoreActions() {
     async createChunkManual(input: Parameters<typeof dbCreateChunkManual>[1]) {
       if (!user) throw new Error("Not signed in");
       const id = await dbCreateChunkManual(user.id, input);
+      await qc.invalidateQueries({ queryKey: QUERY_KEY });
+      return id;
+    },
+    async createSubject(name: string) {
+      if (!user) throw new Error("Not signed in");
+      const id = await dbCreateSubject(user.id, name);
       await qc.invalidateQueries({ queryKey: QUERY_KEY });
       return id;
     },

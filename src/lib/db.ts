@@ -277,6 +277,27 @@ export async function deleteSubject(id: string) {
   if (error) throw error;
 }
 
+export async function createSubject(userId: string, name: string): Promise<string> {
+  const nm = name.trim();
+  if (!nm) throw new Error("Subject name required");
+
+  const { data: existing } = await supabase
+    .from("subjects")
+    .select("id")
+    .eq("user_id", userId)
+    .ilike("name", nm)
+    .maybeSingle();
+  if (existing?.id) return existing.id;
+
+  const { data, error } = await supabase
+    .from("subjects")
+    .insert({ user_id: userId, name: nm, description: "" })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
 export async function createChunkManual(
   userId: string,
   input: {
