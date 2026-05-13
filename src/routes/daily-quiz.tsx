@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DailyQuizPage } from "@/components/DailyQuizPage";
+import { z } from "zod";
+import { DailyQuizRouteShell } from "@/components/DailyQuizRouteShell";
+
+const search = z.object({
+  quizId: z.string().optional(),
+  timer: z.coerce.number().min(1).max(180).optional(),
+});
 
 export const Route = createFileRoute("/daily-quiz")({
-  component: DailyQuizPage,
+  validateSearch: (s) => search.parse(s),
+  component: DailyQuizRouteShell,
 });
