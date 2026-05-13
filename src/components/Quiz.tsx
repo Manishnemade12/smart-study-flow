@@ -54,9 +54,9 @@ export function Quiz({ questions }: { questions: QuizQuestion[] }) {
                 disabled={isRevealed}
                 className={cn(
                   "w-full text-left px-4 py-3 rounded-lg border transition-colors",
-                  selected && !isRevealed && "border-primary bg-primary/5",
-                  correctOpt && "border-emerald-500 bg-emerald-50",
-                  wrongOpt && "border-destructive bg-destructive/5",
+                  selected && !isRevealed && "border-primary bg-primary/5 text-primary",
+                  correctOpt && "border-emerald-500 bg-emerald-50 text-emerald-700",
+                  wrongOpt && "border-destructive bg-destructive/5 text-destructive",
                   !selected && !isRevealed && "hover:bg-accent/50",
                 )}
               >
@@ -97,7 +97,10 @@ export function Quiz({ questions }: { questions: QuizQuestion[] }) {
       )}
 
       {isRevealed && (
-        <div className={cn("rounded-lg p-3 text-sm border", isCorrect ? "border-emerald-500 bg-emerald-50" : "border-destructive bg-destructive/5")}>
+        <div className={cn(
+          "rounded-lg p-3 text-sm border",
+          isCorrect ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-destructive bg-destructive/5 text-destructive",
+        )}>
           <div className="flex items-center gap-2 font-medium">
             {isCorrect ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <XCircle className="w-4 h-4 text-destructive" />}
             {isCorrect ? "Correct" : `Answer: ${q.answer}`}
