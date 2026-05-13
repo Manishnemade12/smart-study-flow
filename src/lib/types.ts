@@ -44,9 +44,7 @@ export interface AppData {
 
 // ============= DAILY QUIZ TYPES =============
 
-export interface DailyQuizQuestion extends QuizQuestion {
-  id?: string;
-}
+export type DailyQuizQuestion = Omit<QuizQuestion, "id"> & { id?: string };
 
 export interface DailyQuiz {
   id: string;
