@@ -73,22 +73,11 @@ export function QuizGenerateDialog({ open, onOpenChange, defaultSubjectId, defau
 
     setLoading(true);
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-quiz`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ notes, topic: subject.name, count, difficulty }),
-        },
-      );
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Failed to generate quiz");
-      }
-      const out = await res.json();
+      const { data: out, error: fnError } = await supabase.functions.invoke("generate-quiz", {
+        body: { notes, topic: subject.name, count, difficulty },
+      });
+      if (fnError) throw fnError;
+
       let questions = out.questions ?? [];
       if (!questions.length) throw new Error("AI returned no questions");
       if (randomize) questions = [...questions].sort(() => Math.random() - 0.5);
@@ -96,7 +85,7 @@ export function QuizGenerateDialog({ open, onOpenChange, defaultSubjectId, defau
       const today = new Date().toISOString().split("T")[0];
       const { data: inserted, error } = await supabase
         .from("daily_quizzes")
-        .insert({
+        .upsert({
           user_id: user.id,
           subject_id: subjectId,
           quiz_date: today,
@@ -104,6 +93,8 @@ export function QuizGenerateDialog({ open, onOpenChange, defaultSubjectId, defau
           total_questions: questions.length,
           difficulty,
           source: "ai",
+        }, {
+          onConflict: "user_id,subject_id,quiz_date",
         })
         .select("id")
         .single();
