@@ -72,6 +72,9 @@ export function DailyQuizPage() {
   const bestScore = attempts && attempts.length
     ? Math.max(...attempts.map(a => Number(a.percentage || 0)))
     : 0;
+  const attemptedQuizIds = new Set((attempts ?? []).map((a) => a.daily_quiz_id));
+  const unattemptedTodayQuizzes = (todayQuizzes ?? []).filter((q) => !attemptedQuizIds.has(q.id));
+  const attemptedTodayQuizzes = (todayQuizzes ?? []).filter((q) => attemptedQuizIds.has(q.id));
 
   const subjectName = (id: string) => data.subjects.find((s) => s.id === id)?.name ?? "Subject";
 
@@ -111,7 +114,7 @@ export function DailyQuizPage() {
           </TabsList>
 
           <TabsContent value="today" className="mt-4">
-            {loadingToday ? (
+            {loadingToday || loadingAttempts ? (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 rounded-xl" />)}
               </div>
@@ -127,45 +130,87 @@ export function DailyQuizPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {todayQuizzes.map((q) => {
-                  const att = attempts?.filter(a => a.daily_quiz_id === q.id) ?? [];
-                  const best = att.length ? Math.max(...att.map(a => Number(a.percentage || 0))) : null;
-                  return (
-                    <Card key={q.id} className="hover:border-primary/50 transition-colors cursor-pointer group"
-                      onClick={() => navigate({
-                        to: "/daily-quiz/$subjectId",
-                        params: { subjectId: q.subject_id },
-                        search: { quizId: q.id, timer: 10 },
-                      })}>
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <CardTitle className="text-base line-clamp-2">{subjectName(q.subject_id)}</CardTitle>
-                          <Badge variant="outline" className={difficultyColors[q.difficulty] || ""}>
-                            {q.difficulty}
-                          </Badge>
-                        </div>
-                        <CardDescription className="text-xs">
-                          {q.total_questions} questions · {new Date(q.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="pt-0 flex items-center justify-between">
-                        <div className="text-sm">
-                          {att.length ? (
-                            <span className="text-emerald-400 flex items-center gap-1">
-                              <Trophy className="w-3.5 h-3.5" /> Best {best?.toFixed(0)}%
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">Not attempted</span>
-                          )}
-                        </div>
-                        <Button size="sm" variant="ghost" className="gap-1 group-hover:text-primary">
-                          {att.length ? "Retry" : "Start"} <ChevronRight className="w-4 h-4" />
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+              <div className="space-y-5">
+                {unattemptedTodayQuizzes.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-medium text-muted-foreground">Not Attempted</h3>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {unattemptedTodayQuizzes.map((q) => {
+                        const att = attempts?.filter(a => a.daily_quiz_id === q.id) ?? [];
+                        return (
+                          <Card key={q.id} className="hover:border-primary/50 transition-colors cursor-pointer group"
+                            onClick={() => navigate({
+                              to: "/daily-quiz/$subjectId",
+                              params: { subjectId: q.subject_id },
+                              search: { quizId: q.id, timer: 10 },
+                            })}>
+                            <CardHeader className="pb-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <CardTitle className="text-base line-clamp-2">{subjectName(q.subject_id)}</CardTitle>
+                                <Badge variant="outline" className={difficultyColors[q.difficulty] || ""}>
+                                  {q.difficulty}
+                                </Badge>
+                              </div>
+                              <CardDescription className="text-xs">
+                                {q.total_questions} questions · {new Date(q.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="pt-0 flex items-center justify-between">
+                              <div className="text-sm">
+                                <span className="text-muted-foreground">Not attempted</span>
+                              </div>
+                              <Button size="sm" variant="ghost" className="gap-1 group-hover:text-primary">
+                                Start <ChevronRight className="w-4 h-4" />
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {attemptedTodayQuizzes.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-medium text-muted-foreground">Attempted Quizzes</h3>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {attemptedTodayQuizzes.map((q) => {
+                        const att = attempts?.filter(a => a.daily_quiz_id === q.id) ?? [];
+                        const best = att.length ? Math.max(...att.map(a => Number(a.percentage || 0))) : null;
+                        return (
+                          <Card key={q.id} className="hover:border-primary/50 transition-colors cursor-pointer group"
+                            onClick={() => navigate({
+                              to: "/daily-quiz/$subjectId",
+                              params: { subjectId: q.subject_id },
+                              search: { quizId: q.id, timer: 10 },
+                            })}>
+                            <CardHeader className="pb-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <CardTitle className="text-base line-clamp-2">{subjectName(q.subject_id)}</CardTitle>
+                                <Badge variant="outline" className={difficultyColors[q.difficulty] || ""}>
+                                  {q.difficulty}
+                                </Badge>
+                              </div>
+                              <CardDescription className="text-xs">
+                                {q.total_questions} questions · {new Date(q.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="pt-0 flex items-center justify-between">
+                              <div className="text-sm">
+                                <span className="text-emerald-400 flex items-center gap-1">
+                                  <Trophy className="w-3.5 h-3.5" /> Best {best?.toFixed(0)}%
+                                </span>
+                              </div>
+                              <Button size="sm" variant="ghost" className="gap-1 group-hover:text-primary">
+                                Retry <ChevronRight className="w-4 h-4" />
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </TabsContent>
