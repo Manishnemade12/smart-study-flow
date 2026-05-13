@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Quiz } from "@/components/Quiz";
-import { Pencil, Save, X, Trash2, CheckCircle2, Circle, ChevronRight, Plus } from "lucide-react";
+import { Pencil, Save, X, Trash2, CheckCircle2, Circle, ChevronRight, Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useAddContent } from "@/lib/add-content";
+import { QuizGenerateDialog } from "@/components/quiz/QuizGenerateDialog";
 
 export const Route = createFileRoute("/chunk/$chunkId")({
   component: ChunkPage,
@@ -27,6 +28,7 @@ function ChunkPage() {
   const subject = chunk ? data.subjects.find((s) => s.id === chunk.subjectId) : null;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ title: "", summary: "", notes: "" });
+  const [quizDialogOpen, setQuizDialogOpen] = useState(false);
 
   const breadcrumb = useMemo(() => {
     if (!chunk) return [];
@@ -150,6 +152,14 @@ function ChunkPage() {
             >
               <Plus className="w-4 h-4" /> Add more notes
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setQuizDialogOpen(true)}
+              className="gap-2"
+            >
+              <Sparkles className="w-4 h-4" /> Generate quiz
+            </Button>
             <Button size="sm" variant="ghost" onClick={del} className="gap-2 text-destructive hover:text-destructive ml-auto">
               <Trash2 className="w-4 h-4" /> Delete
             </Button>
@@ -235,6 +245,12 @@ function ChunkPage() {
           </div>
         )}
       </div>
+      <QuizGenerateDialog
+        open={quizDialogOpen}
+        onOpenChange={setQuizDialogOpen}
+        defaultSubjectId={subject.id}
+        defaultChunkIds={[chunk.id]}
+      />
     </AppLayout>
   );
 }
