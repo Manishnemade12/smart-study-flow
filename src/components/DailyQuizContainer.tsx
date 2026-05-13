@@ -30,7 +30,7 @@ function fmtClock(s: number) {
 
 export function DailyQuizContainer() {
   const { subjectId } = useParams({ from: "/daily-quiz/$subjectId" });
-  const search = useSearch({ from: "/daily-quiz/$subjectId" });
+  const search = useSearch({ from: "/daily-quiz/$subjectId" }) as { quizId?: string; timer?: number };
   const navigate = useNavigate();
   const { user } = useAuth();
   const data = useStore();
