@@ -1,21 +1,28 @@
-// Edge function: generate a global MCQ quiz from selected chunks' notes.
+// Generate SSC-grade MCQ quiz from chunk notes (with topic fallback for thin notes).
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SYSTEM_PROMPT = `You are an SSC exam quiz generator. The user gives you study notes from one or more chunks plus a desired number of questions and a difficulty level (easy / medium / hard). Generate that many MCQ questions strictly grounded in the provided notes.
+const SYSTEM_PROMPT = `You are an expert SSC (Staff Selection Commission) exam quiz writer for SSC CGL, CHSL, MTS, GD-Constable level.
 
-Rules:
-- All questions MUST be type "mcq" with exactly 4 options.
-- Mix conceptual + factual questions appropriate for SSC exams.
-- Difficulty:
-  - easy: direct recall from notes.
-  - medium: requires understanding / mild inference.
-  - hard: tricky distractors, multi-step reasoning, fine details.
-- Always include the exact correct option string in "answer" and a one-line "explanation".
-- Never invent facts not present in the notes.
-- Output MUST be a single tool call.`;
+You are given:
+- A topic / subject name
+- Optional study notes from the candidate
+- Number of questions (n)
+- Difficulty (easy / medium / hard)
+
+Your job:
+1. Generate EXACTLY n SSC-style MCQ questions.
+2. Each question MUST be type "mcq" with EXACTLY 4 plausible options and one clearly correct answer.
+3. Style and rigor must match real SSC papers (concise stems, single-best-answer, mix of fact + concept + reasoning).
+4. Prefer grounding questions in the supplied notes when available. If the notes are sparse or missing, you MAY use your general SSC syllabus knowledge to write high-quality SSC-standard questions on the given topic — never refuse.
+5. Difficulty:
+   - easy: direct recall, common SSC trivia.
+   - medium: application / mild inference / commonly confused facts.
+   - hard: tricky distractors, multi-step reasoning, fine SSC-paper detail.
+6. Provide a one-line "explanation" for every question (why the answer is correct).
+7. Output MUST be a single tool call, no prose.`;
 
 const TOOL = {
   type: "function",
@@ -51,20 +58,27 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { notes, count, difficulty } = await req.json();
-    if (!notes || typeof notes !== "string") {
-      return new Response(JSON.stringify({ error: "notes (string) is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const n = Math.min(Math.max(parseInt(String(count ?? 10), 10) || 10, 1), 50);
-    const diff = ["easy", "medium", "hard"].includes(difficulty) ? difficulty : "medium";
+    const body = await req.json();
+    const notes: string = typeof body.notes === "string" ? body.notes : "";
+    const topic: string = typeof body.topic === "string" ? body.topic : "General SSC";
+    const count = Math.min(Math.max(parseInt(String(body.count ?? 10), 10) || 10, 1), 50);
+    const difficulty = ["easy", "medium", "hard"].includes(body.difficulty) ? body.difficulty : "medium";
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const userPrompt = `Generate exactly ${n} MCQ questions at ${diff} difficulty from the notes below.\n\nNOTES:\n${notes.slice(0, 60000)}`;
+    const trimmedNotes = notes.slice(0, 60000).trim();
+    const hasNotes = trimmedNotes.length > 80;
+
+    const userPrompt = `TOPIC: ${topic}
+DIFFICULTY: ${difficulty}
+QUESTIONS REQUESTED: ${count}
+
+${hasNotes
+  ? `STUDY NOTES (ground questions in these where possible):\n${trimmedNotes}`
+  : `STUDY NOTES: (none provided — use your general SSC syllabus knowledge for the topic above to generate high-quality SSC-standard MCQs.)`}
+
+Now produce exactly ${count} ${difficulty}-difficulty SSC-style MCQs via the emit_quiz tool.`;
 
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -88,19 +102,16 @@ Deno.serve(async (req) => {
       console.error("AI gateway error", resp.status, errText);
       if (resp.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (resp.status === 402) {
         return new Response(JSON.stringify({ error: "AI credits exhausted. Add credits in Workspace settings." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       return new Response(JSON.stringify({ error: "AI gateway error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -108,8 +119,7 @@ Deno.serve(async (req) => {
     const toolCall = json.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) {
       return new Response(JSON.stringify({ error: "AI did not return structured output" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const args = JSON.parse(toolCall.function.arguments);
@@ -119,8 +129,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error("generate-quiz error", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
