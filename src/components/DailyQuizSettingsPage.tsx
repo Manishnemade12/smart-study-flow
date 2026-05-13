@@ -51,7 +51,7 @@ export function DailyQuizSettingsPage() {
 
       const { error } = await supabase
         .from("daily_quiz_config")
-        .update(updatedConfig)
+        .update(updatedConfig as any)
         .eq("user_id", userData.user.id);
 
       if (error) throw error;
