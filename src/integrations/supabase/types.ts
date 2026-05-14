@@ -340,6 +340,90 @@ export type Database = {
         }
         Relationships: []
       }
+      user_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number
+          last_active_date: string | null
+          longest_streak: number
+          total_quizzes_completed: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          last_active_date?: string | null
+          longest_streak?: number
+          total_quizzes_completed?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          last_active_date?: string | null
+          longest_streak?: number
+          total_quizzes_completed?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      weak_questions: {
+        Row: {
+          answer: string
+          created_at: string
+          explanation: string | null
+          id: string
+          last_seen_at: string
+          last_wrong_at: string | null
+          mastered: boolean
+          options: Json
+          question: string
+          question_hash: string
+          subject_id: string
+          times_correct: number
+          times_wrong: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          last_seen_at?: string
+          last_wrong_at?: string | null
+          mastered?: boolean
+          options?: Json
+          question: string
+          question_hash: string
+          subject_id: string
+          times_correct?: number
+          times_wrong?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          last_seen_at?: string
+          last_wrong_at?: string | null
+          mastered?: boolean
+          options?: Json
+          question?: string
+          question_hash?: string
+          subject_id?: string
+          times_correct?: number
+          times_wrong?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       daily_quiz_stats_7days: {

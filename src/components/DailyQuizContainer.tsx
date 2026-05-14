@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useStore } from "@/lib/store";
+import { recordWeakAnswers, bumpStreak } from "@/lib/quiz-progress";
 
 interface QuizQ {
   question: string;
@@ -187,6 +188,19 @@ function DailyQuizPlayer({
 
       if (error) throw error;
       if (auto) toast.info("Time's up — quiz auto-submitted");
+
+      // Track weak answers and streak (best-effort, non-blocking on errors)
+      try {
+        await recordWeakAnswers({
+          userId: user.id,
+          subjectId: quiz.subject_id,
+          questions,
+          answers: ans,
+        });
+        await bumpStreak(user.id);
+      } catch (err) {
+        console.warn("progress tracking failed", err);
+      }
 
       navigate({ to: "/daily-quiz-result", search: { attemptId: attempt.id } });
     } catch (e) {

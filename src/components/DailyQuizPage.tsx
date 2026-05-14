@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useStore } from "@/lib/store";
@@ -11,7 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, Trophy, Clock, BookOpen, Play, History, Target, TrendingUp, ChevronRight } from "lucide-react";
+import {
+  Sparkles, Trophy, Clock, BookOpen, Play, History, Target, TrendingUp,
+  ChevronRight, Flame, Brain, Zap, Calendar,
+} from "lucide-react";
 
 const difficultyColors: Record<string, string> = {
   easy: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
@@ -21,9 +24,7 @@ const difficultyColors: Record<string, string> = {
 
 function fmtSecs(s: number | null) {
   if (!s && s !== 0) return "—";
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${m}m ${sec}s`;
+  return `${Math.floor(s / 60)}m ${s % 60}s`;
 }
 
 export function DailyQuizPage() {
@@ -65,6 +66,29 @@ export function DailyQuizPage() {
     enabled: !!user,
   });
 
+  const { data: streak } = useQuery({
+    queryKey: ["dq-streak", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("user_streaks").select("*").eq("user_id", user!.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: weakSummary } = useQuery({
+    queryKey: ["dq-weak-summary", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("weak_questions")
+        .select("subject_id, mastered")
+        .eq("user_id", user!.id);
+      const active = (data ?? []).filter((w) => !w.mastered).length;
+      const mastered = (data ?? []).filter((w) => w.mastered).length;
+      return { active, mastered };
+    },
+    enabled: !!user,
+  });
+
   const totalAttempts = attempts?.length ?? 0;
   const avgScore = attempts && attempts.length
     ? attempts.reduce((s, a) => s + Number(a.percentage || 0), 0) / attempts.length
@@ -78,6 +102,13 @@ export function DailyQuizPage() {
 
   const subjectName = (id: string) => data.subjects.find((s) => s.id === id)?.name ?? "Subject";
 
+  // Activity for last 7 days
+  const last7 = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().split("T")[0];
+  });
+  const activeDays = new Set((attempts ?? []).map((a) => a.quiz_date));
+
   return (
     <AppLayout>
       <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-6xl mx-auto">
@@ -89,7 +120,7 @@ export function DailyQuizPage() {
                 <Sparkles className="w-7 h-7" /> SSC Quiz Hub
               </h1>
               <p className="opacity-90 mt-1 text-sm sm:text-base">
-                Generate and practice SSC-style MCQ tests from your notes — anytime.
+                Generate SSC-style MCQs, drill weak spots, and track your daily streak.
               </p>
             </div>
             <Button size="lg" variant="secondary" className="w-full sm:w-auto gap-2"
@@ -99,12 +130,61 @@ export function DailyQuizPage() {
           </div>
         </div>
 
+        {/* Streak + weak quick-action row */}
+        <div className="grid sm:grid-cols-2 gap-3 mb-6">
+          <Card className="bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/20">
+            <CardContent className="p-4 sm:p-5 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                <Flame className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-muted-foreground">Daily streak</div>
+                <div className="text-2xl font-bold">{streak?.current_streak ?? 0} <span className="text-sm text-muted-foreground">day{(streak?.current_streak ?? 0) === 1 ? "" : "s"}</span></div>
+                <div className="text-xs text-muted-foreground mt-0.5">Longest: {streak?.longest_streak ?? 0} · Total: {streak?.total_quizzes_completed ?? 0}</div>
+              </div>
+              {/* 7-day dots */}
+              <div className="hidden sm:flex gap-1">
+                {last7.map((d) => {
+                  const active = activeDays.has(d);
+                  return (
+                    <div key={d} title={d}
+                      className={`w-2.5 h-7 rounded-sm ${active ? "bg-amber-400" : "bg-muted"}`} />
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Link to="/daily-quiz/weak" className="block">
+            <Card className="bg-gradient-to-br from-rose-500/10 to-transparent border-rose-500/20 hover:border-rose-500/40 transition-colors h-full">
+              <CardContent className="p-4 sm:p-5 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
+                  <Brain className="w-6 h-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-muted-foreground">Weak topic drill</div>
+                  <div className="text-2xl font-bold">{weakSummary?.active ?? 0} <span className="text-sm text-muted-foreground">to revise</span></div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{weakSummary?.mastered ?? 0} already mastered</div>
+                </div>
+                <Zap className="w-5 h-5 text-rose-400 shrink-0" />
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <StatCard icon={<History className="w-4 h-4" />} label="Total attempts" value={totalAttempts} />
           <StatCard icon={<Trophy className="w-4 h-4 text-amber-400" />} label="Best score" value={`${bestScore.toFixed(0)}%`} />
           <StatCard icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="Avg score" value={`${avgScore.toFixed(0)}%`} />
-          <StatCard icon={<BookOpen className="w-4 h-4 text-primary" />} label="Today's quizzes" value={todayQuizzes?.length ?? 0} />
+          <Link to="/daily-quiz/revision" className="block">
+            <Card className="hover:border-primary/50 transition-colors h-full">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground"><BookOpen className="w-4 h-4 text-primary" />Revision report</div>
+                <div className="text-sm font-semibold mt-2 flex items-center gap-1">View details <ChevronRight className="w-4 h-4" /></div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         <Tabs defaultValue="today" className="w-full">
@@ -132,84 +212,12 @@ export function DailyQuizPage() {
             ) : (
               <div className="space-y-5">
                 {unattemptedTodayQuizzes.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-medium text-muted-foreground">Not Attempted</h3>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {unattemptedTodayQuizzes.map((q) => {
-                        const att = attempts?.filter(a => a.daily_quiz_id === q.id) ?? [];
-                        return (
-                          <Card key={q.id} className="hover:border-primary/50 transition-colors cursor-pointer group"
-                            onClick={() => navigate({
-                              to: "/daily-quiz/$subjectId",
-                              params: { subjectId: q.subject_id },
-                              search: { quizId: q.id, timer: 10 },
-                            })}>
-                            <CardHeader className="pb-3">
-                              <div className="flex items-start justify-between gap-2">
-                                <CardTitle className="text-base line-clamp-2">{subjectName(q.subject_id)}</CardTitle>
-                                <Badge variant="outline" className={difficultyColors[q.difficulty] || ""}>
-                                  {q.difficulty}
-                                </Badge>
-                              </div>
-                              <CardDescription className="text-xs">
-                                {q.total_questions} questions · {new Date(q.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent className="pt-0 flex items-center justify-between">
-                              <div className="text-sm">
-                                <span className="text-muted-foreground">Not attempted</span>
-                              </div>
-                              <Button size="sm" variant="ghost" className="gap-1 group-hover:text-primary">
-                                Start <ChevronRight className="w-4 h-4" />
-                              </Button>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  <QuizGrid title="Not Attempted" quizzes={unattemptedTodayQuizzes}
+                    subjectName={subjectName} attempts={attempts ?? []} navigate={navigate} cta="Start" />
                 )}
-
                 {attemptedTodayQuizzes.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-medium text-muted-foreground">Attempted Quizzes</h3>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {attemptedTodayQuizzes.map((q) => {
-                        const att = attempts?.filter(a => a.daily_quiz_id === q.id) ?? [];
-                        const best = att.length ? Math.max(...att.map(a => Number(a.percentage || 0))) : null;
-                        return (
-                          <Card key={q.id} className="hover:border-primary/50 transition-colors cursor-pointer group"
-                            onClick={() => navigate({
-                              to: "/daily-quiz/$subjectId",
-                              params: { subjectId: q.subject_id },
-                              search: { quizId: q.id, timer: 10 },
-                            })}>
-                            <CardHeader className="pb-3">
-                              <div className="flex items-start justify-between gap-2">
-                                <CardTitle className="text-base line-clamp-2">{subjectName(q.subject_id)}</CardTitle>
-                                <Badge variant="outline" className={difficultyColors[q.difficulty] || ""}>
-                                  {q.difficulty}
-                                </Badge>
-                              </div>
-                              <CardDescription className="text-xs">
-                                {q.total_questions} questions · {new Date(q.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent className="pt-0 flex items-center justify-between">
-                              <div className="text-sm">
-                                <span className="text-emerald-400 flex items-center gap-1">
-                                  <Trophy className="w-3.5 h-3.5" /> Best {best?.toFixed(0)}%
-                                </span>
-                              </div>
-                              <Button size="sm" variant="ghost" className="gap-1 group-hover:text-primary">
-                                Retry <ChevronRight className="w-4 h-4" />
-                              </Button>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  <QuizGrid title="Attempted Quizzes" quizzes={attemptedTodayQuizzes}
+                    subjectName={subjectName} attempts={attempts ?? []} navigate={navigate} cta="Retry" showBest />
                 )}
               </div>
             )}
@@ -241,7 +249,7 @@ export function DailyQuizPage() {
                           <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
                             <span>{a.score}/{a.total_questions} correct</span>
                             <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {fmtSecs(a.time_taken)}</span>
-                            <span>{a.completed_at ? new Date(a.completed_at).toLocaleDateString() : a.quiz_date}</span>
+                            <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{a.completed_at ? new Date(a.completed_at).toLocaleDateString() : a.quiz_date}</span>
                           </div>
                         </div>
                         <ChevronRight className="w-4 h-4 text-muted-foreground" />
@@ -257,6 +265,50 @@ export function DailyQuizPage() {
 
       <QuizGenerateDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </AppLayout>
+  );
+}
+
+function QuizGrid({ title, quizzes, subjectName, attempts, navigate, cta, showBest }: any) {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {quizzes.map((q: any) => {
+          const att = attempts.filter((a: any) => a.daily_quiz_id === q.id);
+          const best = att.length ? Math.max(...att.map((a: any) => Number(a.percentage || 0))) : null;
+          return (
+            <Card key={q.id} className="hover:border-primary/50 transition-colors cursor-pointer group"
+              onClick={() => navigate({
+                to: "/daily-quiz/$subjectId",
+                params: { subjectId: q.subject_id },
+                search: { quizId: q.id, timer: 10 },
+              })}>
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-base line-clamp-2">{subjectName(q.subject_id)}</CardTitle>
+                  <Badge variant="outline" className={difficultyColors[q.difficulty] || ""}>
+                    {q.difficulty}
+                  </Badge>
+                </div>
+                <CardDescription className="text-xs">
+                  {q.total_questions} questions · {new Date(q.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0 flex items-center justify-between">
+                <div className="text-sm">
+                  {showBest && best !== null
+                    ? <span className="text-emerald-400 flex items-center gap-1"><Trophy className="w-3.5 h-3.5" /> Best {best.toFixed(0)}%</span>
+                    : <span className="text-muted-foreground">Not attempted</span>}
+                </div>
+                <Button size="sm" variant="ghost" className="gap-1 group-hover:text-primary">
+                  {cta} <ChevronRight className="w-4 h-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

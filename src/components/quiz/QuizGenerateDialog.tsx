@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchWeakQuestions } from "@/lib/quiz-progress";
 
 type Props = {
   open: boolean;
@@ -31,6 +32,7 @@ export function QuizGenerateDialog({ open, onOpenChange, defaultSubjectId, defau
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [timer, setTimer] = useState(10);
   const [randomize, setRandomize] = useState(true);
+  const [includeWeak, setIncludeWeak] = useState(true);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -41,6 +43,7 @@ export function QuizGenerateDialog({ open, onOpenChange, defaultSubjectId, defau
       setDifficulty("medium");
       setTimer(10);
       setRandomize(true);
+      setIncludeWeak(true);
     }
   }, [open, defaultSubjectId, defaultChunkIds]);
 
@@ -73,12 +76,32 @@ export function QuizGenerateDialog({ open, onOpenChange, defaultSubjectId, defau
 
     setLoading(true);
     try {
+      // Pull up to ~30% slots worth of weak questions for this subject
+      let weakQs: any[] = [];
+      if (includeWeak) {
+        const targetWeak = Math.max(1, Math.floor(count * 0.3));
+        const weakRows = await fetchWeakQuestions({
+          userId: user.id,
+          subjectId,
+          limit: targetWeak,
+        });
+        weakQs = weakRows.map((w) => ({
+          question: w.question,
+          type: "mcq",
+          options: Array.isArray(w.options) ? w.options : [],
+          answer: w.answer,
+          explanation: w.explanation ?? "Previously missed — revision question.",
+        })).filter((q) => q.options.length === 4);
+      }
+
+      const remaining = Math.max(1, count - weakQs.length);
+
       const { data: out, error: fnError } = await supabase.functions.invoke("generate-quiz", {
-        body: { notes, topic: subject.name, count, difficulty },
+        body: { notes, topic: subject.name, count: remaining, difficulty },
       });
       if (fnError) throw fnError;
 
-      let questions = out.questions ?? [];
+      let questions = [...weakQs, ...(out.questions ?? [])];
       if (!questions.length) throw new Error("AI returned no questions");
       if (randomize) questions = [...questions].sort(() => Math.random() - 0.5);
 
@@ -194,6 +217,16 @@ export function QuizGenerateDialog({ open, onOpenChange, defaultSubjectId, defau
           <label className="flex items-center gap-2 text-sm">
             <Checkbox checked={randomize} onCheckedChange={(v) => setRandomize(!!v)} />
             Randomize question order
+          </label>
+
+          <label className="flex items-start gap-2 text-sm rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+            <Checkbox checked={includeWeak} onCheckedChange={(v) => setIncludeWeak(!!v)} />
+            <span>
+              <span className="font-medium">Mix in weak questions</span>
+              <span className="block text-xs text-muted-foreground">
+                Replays ~30% of past mistakes for this subject so weak topics keep coming back until mastered.
+              </span>
+            </span>
           </label>
         </div>
 
