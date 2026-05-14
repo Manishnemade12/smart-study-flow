@@ -16,7 +16,6 @@ import { Route as DailyQuizResultRouteImport } from './routes/daily-quiz-result'
 import { Route as DailyQuizRouteImport } from './routes/daily-quiz'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DailyQuizIndexRouteImport } from './routes/daily-quiz.index'
 import { Route as DailyQuizWeakRouteImport } from './routes/daily-quiz.weak'
 import { Route as DailyQuizRevisionRouteImport } from './routes/daily-quiz.revision'
 import { Route as DailyQuizSubjectIdRouteImport } from './routes/daily-quiz.$subjectId'
@@ -57,11 +56,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DailyQuizIndexRoute = DailyQuizIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => DailyQuizRoute,
-} as any)
 const DailyQuizWeakRoute = DailyQuizWeakRouteImport.update({
   id: '/weak',
   path: '/weak',
@@ -95,11 +89,11 @@ export interface FileRoutesByFullPath {
   '/daily-quiz/$subjectId': typeof DailyQuizSubjectIdRoute
   '/daily-quiz/revision': typeof DailyQuizRevisionRoute
   '/daily-quiz/weak': typeof DailyQuizWeakRoute
-  '/daily-quiz/': typeof DailyQuizIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/daily-quiz': typeof DailyQuizRouteWithChildren
   '/daily-quiz-result': typeof DailyQuizResultRoute
   '/daily-quiz-settings': typeof DailyQuizSettingsRoute
   '/dashboard': typeof DashboardRoute
@@ -108,7 +102,6 @@ export interface FileRoutesByTo {
   '/daily-quiz/$subjectId': typeof DailyQuizSubjectIdRoute
   '/daily-quiz/revision': typeof DailyQuizRevisionRoute
   '/daily-quiz/weak': typeof DailyQuizWeakRoute
-  '/daily-quiz': typeof DailyQuizIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -123,7 +116,6 @@ export interface FileRoutesById {
   '/daily-quiz/$subjectId': typeof DailyQuizSubjectIdRoute
   '/daily-quiz/revision': typeof DailyQuizRevisionRoute
   '/daily-quiz/weak': typeof DailyQuizWeakRoute
-  '/daily-quiz/': typeof DailyQuizIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -139,11 +131,11 @@ export interface FileRouteTypes {
     | '/daily-quiz/$subjectId'
     | '/daily-quiz/revision'
     | '/daily-quiz/weak'
-    | '/daily-quiz/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/daily-quiz'
     | '/daily-quiz-result'
     | '/daily-quiz-settings'
     | '/dashboard'
@@ -152,7 +144,6 @@ export interface FileRouteTypes {
     | '/daily-quiz/$subjectId'
     | '/daily-quiz/revision'
     | '/daily-quiz/weak'
-    | '/daily-quiz'
   id:
     | '__root__'
     | '/'
@@ -166,7 +157,6 @@ export interface FileRouteTypes {
     | '/daily-quiz/$subjectId'
     | '/daily-quiz/revision'
     | '/daily-quiz/weak'
-    | '/daily-quiz/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -231,13 +221,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/daily-quiz/': {
-      id: '/daily-quiz/'
-      path: '/'
-      fullPath: '/daily-quiz/'
-      preLoaderRoute: typeof DailyQuizIndexRouteImport
-      parentRoute: typeof DailyQuizRoute
-    }
     '/daily-quiz/weak': {
       id: '/daily-quiz/weak'
       path: '/weak'
@@ -273,14 +256,12 @@ interface DailyQuizRouteChildren {
   DailyQuizSubjectIdRoute: typeof DailyQuizSubjectIdRoute
   DailyQuizRevisionRoute: typeof DailyQuizRevisionRoute
   DailyQuizWeakRoute: typeof DailyQuizWeakRoute
-  DailyQuizIndexRoute: typeof DailyQuizIndexRoute
 }
 
 const DailyQuizRouteChildren: DailyQuizRouteChildren = {
   DailyQuizSubjectIdRoute: DailyQuizSubjectIdRoute,
   DailyQuizRevisionRoute: DailyQuizRevisionRoute,
   DailyQuizWeakRoute: DailyQuizWeakRoute,
-  DailyQuizIndexRoute: DailyQuizIndexRoute,
 }
 
 const DailyQuizRouteWithChildren = DailyQuizRoute._addFileChildren(
