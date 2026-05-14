@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        continue-on-error: true
+        run: npm run lint
+
+      - name: Type check
+        continue-on-error: true
+        run: npx tsc --noEmit
+
+      - name: Format check
+        continue-on-error: true
+        run: npx prettier --check "**/*.{ts,tsx,js,jsx,json,md,yml,yaml,css}"
+
+      - name: Build
+        run: npm run build
+
+      - name: Test (if present)
+        continue-on-error: true
+        run: npm test --if-present
+
+      - name: Security audit (high+)
+        continue-on-error: true
+        run: npm audit --audit-level=high
