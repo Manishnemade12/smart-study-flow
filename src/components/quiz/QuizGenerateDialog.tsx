@@ -218,6 +218,16 @@ export function QuizGenerateDialog({ open, onOpenChange, defaultSubjectId, defau
             <Checkbox checked={randomize} onCheckedChange={(v) => setRandomize(!!v)} />
             Randomize question order
           </label>
+
+          <label className="flex items-start gap-2 text-sm rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+            <Checkbox checked={includeWeak} onCheckedChange={(v) => setIncludeWeak(!!v)} />
+            <span>
+              <span className="font-medium">Mix in weak questions</span>
+              <span className="block text-xs text-muted-foreground">
+                Replays ~30% of past mistakes for this subject so weak topics keep coming back until mastered.
+              </span>
+            </span>
+          </label>
         </div>
 
         <div className="flex justify-end gap-2 pt-3 border-t">
